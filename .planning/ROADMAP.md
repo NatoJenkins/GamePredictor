@@ -30,11 +30,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Schedule/metadata table contains every regular season game with dates, home/away teams, final scores, and week numbers for all 20 seasons
   3. All team abbreviations in both tables use the current canonical form (e.g., LV not OAK, LAC not SD) via a single auditable mapping constant
   4. Ingestion surfaces clear errors when row counts, season completeness, or column schema deviate from expectations -- it does not silently proceed with bad data
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Project setup, Docker PostgreSQL, DB schema, constants, and test scaffolds
+- [ ] 01-02-PLAN.md — Ingestion pipeline with caching, upsert, validation, and integration tests
 
 ### Phase 2: Feature Engineering
 **Goal**: A game_features table exists with one row per game (home perspective) containing rolling offensive, defensive, and situational features computed with zero data leakage
