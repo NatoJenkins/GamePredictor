@@ -62,12 +62,12 @@ Plans:
   3. The autoresearch loop reads models/program.md, modifies only models/train.py, runs training, and keeps the result only if 2023 validation accuracy improves over the previous best -- otherwise it reverts
   4. The best model beats the always-home baseline (~57%) and the better-record baseline (~60%) on the 2023 validation season specifically
   5. At least 5 logged experiments exist showing iterative improvement with keep/revert decisions recorded
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [ ] 03-01-PLAN.md — ML dependencies, baselines module, and baseline unit tests
+- [ ] 03-02-PLAN.md — Training pipeline with temporal split, dual logging, TreeSHAP, and multi-season eval
+- [ ] 03-03-PLAN.md — Experiment queue (program.md) and autoresearch loop execution with 5+ experiments
 
 ### Phase 4: Prediction API
 **Goal**: Predictions and model metadata are accessible via stable FastAPI endpoints that the dashboard can consume
@@ -122,7 +122,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 2/2 | Complete   | 2026-03-16 |
 | 2. Feature Engineering | 2/3 | Gap closure | - |
-| 3. Model Training and Autoresearch | 0/3 | Not started | - |
+| 3. Model Training and Autoresearch | 0/3 | Planned | - |
 | 4. Prediction API | 0/1 | Not started | - |
 | 5. Dashboard | 0/2 | Not started | - |
 | 6. Pipeline and Deployment | 0/2 | Not started | - |
