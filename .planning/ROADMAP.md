@@ -45,11 +45,12 @@ Plans:
   2. Each row represents one game from the home team perspective with situational features (home/away flag, rest days, week number, divisional game flag) populated
   3. Automated leakage validation tests pass -- confirming no feature for game G uses data from game G or any later game -- and these tests block model training if they fail
   4. Feature matrix covers all seasons 2005-2024 with no gaps in coverage
-**Plans:** 2 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Feature definitions, build pipeline, DB schema, and unit tests
-- [ ] 02-02-PLAN.md — Leakage validation tests and CLI entry point
+- [x] 02-01-PLAN.md — Feature definitions, build pipeline, DB schema, and unit tests
+- [x] 02-02-PLAN.md — Leakage validation tests and CLI entry point
+- [ ] 02-03-PLAN.md — Gap closure: fix game_features DDL column names to match pipeline output
 
 ### Phase 3: Model Training and Autoresearch
 **Goal**: An XGBoost win/loss classifier achieves above 60% accuracy on the 2023 validation season, beating both trivial baselines, via a governed experiment loop with full logging
@@ -120,7 +121,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 2/2 | Complete   | 2026-03-16 |
-| 2. Feature Engineering | 0/2 | Not started | - |
+| 2. Feature Engineering | 2/3 | Gap closure | - |
 | 3. Model Training and Autoresearch | 0/3 | Not started | - |
 | 4. Prediction API | 0/1 | Not started | - |
 | 5. Dashboard | 0/2 | Not started | - |
