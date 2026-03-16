@@ -19,8 +19,9 @@ Pre-game win/loss predictions with calibrated confidence scores that beat the Ve
 - [ ] Ingest and store historical NFL game and play-by-play data (2005–2024) in PostgreSQL via nfl-data-py
 - [ ] Engineer game-level features from play-by-play data with no data leakage (rolling stats use only prior-game data)
 - [ ] Train a win/loss classifier (XGBoost), log all experiments to experiments.jsonl and MLflow
+- [ ] Model training uses an autoresearch-style experiment loop: agent reads program.md, picks next experiment, modifies only models/train.py, runs training, logs to experiments.jsonl, keeps or reverts based on 2023 validation accuracy
 - [ ] Temporal split: train 2005–2022, validate 2023, holdout test 2024
-- [ ] Beat benchmark of 53% validation accuracy (approximate Vegas baseline)
+- [ ] Beat benchmark of 53% accuracy on the 2023 validation season specifically (not training accuracy or aggregate accuracy)
 - [ ] Expose predictions via FastAPI endpoints (current week picks + historical results)
 - [ ] Display predictions dashboard: this week's games with predicted winner + confidence score
 - [ ] Display model scoreboard: historical experiment accuracy and comparison
@@ -49,7 +50,8 @@ Pre-game win/loss predictions with calibrated confidence scores that beat the Ve
 - **Data leakage**: All rolling features must use only data prior to the game being predicted — strictly enforced
 - **Temporal split**: Train 2005–2022, validate 2023, holdout 2024 — no shuffling across time boundaries
 - **Stack**: Python 3.11, PostgreSQL, nfl-data-py, pandas, scikit-learn, XGBoost, FastAPI, React, Docker Compose, MLflow
-- **Benchmark**: Must beat 53% validation accuracy before considering model production-ready
+- **Benchmark**: Must beat 53% accuracy on the **2023 validation season specifically** — training accuracy and overall accuracy do not count
+- **Experiment loop**: Model training phase uses an autoresearch loop — agent reads program.md, selects next experiment, modifies only models/train.py, runs training, logs result to experiments.jsonl, keeps if 2023 val accuracy improves else reverts
 - **Deployment**: Docker Compose on Linux VPS — services must be containerized
 
 ## Key Decisions
@@ -63,4 +65,4 @@ Pre-game win/loss predictions with calibrated confidence scores that beat the Ve
 | Temporal train/val/test split | Prevents data leakage across seasons, mirrors real-world deployment | — Pending |
 
 ---
-*Last updated: 2026-03-15 after initialization*
+*Last updated: 2026-03-15 after initialization + experiment loop clarification*
