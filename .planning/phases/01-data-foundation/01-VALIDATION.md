@@ -2,7 +2,7 @@
 phase: 1
 slug: data-foundation
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-03-16
 ---
@@ -38,12 +38,12 @@ created: 2026-03-16
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 01-01-01 | 01 | 1 | DATA-01 | integration | `pytest tests/test_ingestion.py::test_pbp_ingestion -x` | ❌ W0 | ⬜ pending |
-| 01-01-02 | 01 | 1 | DATA-02 | integration | `pytest tests/test_ingestion.py::test_schedule_ingestion -x` | ❌ W0 | ⬜ pending |
-| 01-01-03 | 01 | 1 | DATA-03 | unit | `pytest tests/test_transforms.py::test_team_normalization -x` | ❌ W0 | ⬜ pending |
-| 01-01-04 | 01 | 1 | DATA-04 | unit | `pytest tests/test_validators.py::test_validation_failures -x` | ❌ W0 | ⬜ pending |
+| 01-01-T1 | 01 | 1 | DATA-03 | unit | `python -c "from data.sources import TEAM_ABBREV_MAP, normalize_team_abbrev; assert normalize_team_abbrev('OAK')=='LV'"` | Plan creates | pending |
+| 01-01-T2 | 01 | 1 | DATA-03, DATA-04 | unit | `pytest tests/test_transforms.py tests/test_validators.py -v --tb=short` | Plan creates | pending |
+| 01-02-T1 | 02 | 2 | DATA-01, DATA-02 | unit | `python -c "from click.testing import CliRunner; from data.ingest import ingest; r=CliRunner().invoke(ingest,['--help']); assert r.exit_code==0; assert '--seasons' in r.output"` | Plan creates | pending |
+| 01-02-T2 | 02 | 2 | DATA-01, DATA-02, DATA-04 | unit | `pytest tests/test_ingestion.py -v --tb=short -k "not integration"` | Plan creates | pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Status: pending · green · red · flaky*
 
 ---
 
@@ -70,11 +70,11 @@ created: 2026-03-16
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s
+- [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** pending
