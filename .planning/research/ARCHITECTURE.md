@@ -520,11 +520,13 @@ GamePredictor/
       test_leakage.py     # No-leakage validation tests
   models/
     train.py              # Training script (modified by autoresearch loop)
+    predict.py            # Load model, generate predictions
     artifacts/            # Saved model files
     program.md            # Experiment backlog for autoresearch
     experiments.jsonl     # Experiment log (append-only)
   api/
     main.py               # FastAPI app
+    routes/               # FastAPI route modules
     predict_week.py       # Generate predictions for upcoming games
     schemas.py            # Pydantic models for API responses
   frontend/
@@ -533,11 +535,14 @@ GamePredictor/
       pages/              # Dashboard views
   pipeline/
     refresh.py            # Weekly refresh orchestrator
+  mlflow/                 # MLflow config and artifact store
+  alembic/                # Database migrations
   config.py               # Temporal config, DB connection, model path
+  pyproject.toml          # Python deps, ruff config, project metadata
+  .env.example            # Environment variable documentation
   docker-compose.yml
   Dockerfile.api
   Dockerfile.frontend
-  requirements.txt
 ```
 
 ## Scalability Considerations
