@@ -9,8 +9,8 @@
 
 - [ ] **DATA-01**: System ingests all regular season play-by-play data (2005–2024) from nfl-data-py into PostgreSQL
 - [ ] **DATA-02**: System ingests game schedule/metadata (dates, home/away, final scores, week numbers) for all seasons 2005–2024
-- [ ] **DATA-03**: Team abbreviations are normalized at ingestion (OAK→LV, SD→LAC, etc.) via a defined constants mapping — not inline string replacements — so the mapping is auditable and testable; downstream code assumes clean abbreviations
-- [ ] **DATA-04**: Ingestion validates row counts, season completeness, and schema drift — surfaces errors before feature computation proceeds
+- [x] **DATA-03**: Team abbreviations are normalized at ingestion (OAK→LV, SD→LAC, etc.) via a defined constants mapping — not inline string replacements — so the mapping is auditable and testable; downstream code assumes clean abbreviations
+- [x] **DATA-04**: Ingestion validates row counts, season completeness, and schema drift — surfaces errors before feature computation proceeds
 
 ### Feature Engineering
 
@@ -87,8 +87,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | DATA-01 | Phase 1 | Pending |
 | DATA-02 | Phase 1 | Pending |
-| DATA-03 | Phase 1 | Pending |
-| DATA-04 | Phase 1 | Pending |
+| DATA-03 | Phase 1 | Complete |
+| DATA-04 | Phase 1 | Complete |
 | FEAT-01 | Phase 2 | Pending |
 | FEAT-02 | Phase 2 | Pending |
 | FEAT-03 | Phase 2 | Pending |
