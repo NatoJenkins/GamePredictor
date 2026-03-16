@@ -12,7 +12,7 @@ This roadmap delivers an NFL game prediction system in six phases following a st
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Data Foundation** - Ingest and validate 20 seasons of NFL data into PostgreSQL with normalized team abbreviations
+- [x] **Phase 1: Data Foundation** - Ingest and validate 20 seasons of NFL data into PostgreSQL with normalized team abbreviations (completed 2026-03-16)
 - [ ] **Phase 2: Feature Engineering** - Compute leakage-safe game-level features with automated temporal validation
 - [ ] **Phase 3: Model Training and Autoresearch** - Train XGBoost classifier via experiment loop, beating trivial baselines on 2023 validation
 - [ ] **Phase 4: Prediction API** - Serve predictions and model metadata via FastAPI endpoints
@@ -30,7 +30,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Schedule/metadata table contains every regular season game with dates, home/away teams, final scores, and week numbers for all 20 seasons
   3. All team abbreviations in both tables use the current canonical form (e.g., LV not OAK, LAC not SD) via a single auditable mapping constant
   4. Ingestion surfaces clear errors when row counts, season completeness, or column schema deviate from expectations -- it does not silently proceed with bad data
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 01-01-PLAN.md — Project setup, Docker PostgreSQL, DB schema, constants, and test scaffolds
@@ -119,7 +119,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation | 0/2 | Not started | - |
+| 1. Data Foundation | 2/2 | Complete   | 2026-03-16 |
 | 2. Feature Engineering | 0/2 | Not started | - |
 | 3. Model Training and Autoresearch | 0/3 | Not started | - |
 | 4. Prediction API | 0/1 | Not started | - |
