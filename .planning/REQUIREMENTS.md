@@ -18,7 +18,7 @@
 - [x] **FEAT-02**: System computes rolling basic game stats (point differential, turnover differential, win rate) using only prior-game data
 - [x] **FEAT-03**: System computes situational features per game: home/away flag, rest days, week of season, divisional game flag
 - [x] **FEAT-04**: Feature matrix is structured as one row per game from the home team perspective
-- [ ] **FEAT-05**: Automated leakage validation tests run against the feature pipeline and must pass before any model training proceeds
+- [x] **FEAT-05**: Automated leakage validation tests run against the feature pipeline and must pass before any model training proceeds
 
 ### Model Training
 
@@ -93,7 +93,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FEAT-02 | Phase 2 | Complete |
 | FEAT-03 | Phase 2 | Complete |
 | FEAT-04 | Phase 2 | Complete |
-| FEAT-05 | Phase 2 | Pending |
+| FEAT-05 | Phase 2 | Complete |
 | MODL-01 | Phase 3 | Pending |
 | MODL-02 | Phase 3 | Pending |
 | MODL-03 | Phase 3 | Pending |

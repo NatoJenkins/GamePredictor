@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-16T21:28:38.000Z"
-last_activity: 2026-03-16 — Completed 02-01-PLAN.md
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-16T21:38:11.760Z"
+last_activity: 2026-03-16 — Completed 02-02-PLAN.md (Phase 2 complete)
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 1
-  percent: 50
+  completed_phases: 2
+  total_plans: 4
+  completed_plans: 4
+  percent: 100
 ---
 
 # Project State
@@ -21,33 +21,33 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-15)
 
 **Core value:** Pre-game win/loss predictions with calibrated confidence scores that beat trivial baselines on the 2023 validation season
-**Current focus:** Phase 2: Feature Engineering
+**Current focus:** Phase 2: Feature Engineering (COMPLETE)
 
 ## Current Position
 
-Phase: 2 of 6 (Feature Engineering)
-Plan: 1 of 2 in current phase
-Status: Executing Phase 2
-Last activity: 2026-03-16 — Completed 02-01-PLAN.md
+Phase: 2 of 6 (Feature Engineering) -- COMPLETE
+Plan: 2 of 2 in current phase
+Status: Phase 2 complete, ready for Phase 3
+Last activity: 2026-03-16 — Completed 02-02-PLAN.md (Phase 2 complete)
 
-Progress: [█████-----] 50%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 5min
-- Total execution time: 0.23 hours
+- Total plans completed: 4
+- Average duration: 4min
+- Total execution time: 0.28 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-data-foundation | 2 | 8min | 4min |
-| 02-feature-engineering | 1 | 6min | 6min |
+| 02-feature-engineering | 2 | 9min | 4.5min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (4min), 01-02 (4min), 02-01 (6min)
+- Last 5 plans: 01-01 (4min), 01-02 (4min), 02-01 (6min), 02-02 (3min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -70,6 +70,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Ties counted as 0.5 in win rate computation
 - [Phase 02]: EPA computed from pass/run plays only (EPA_PLAY_TYPES filter)
 - [Phase 02]: Turnover differential via self-merge on opponent turnovers committed
+- [Phase 02]: 6 leakage tests (not 5) -- added monotonic information test for expanding window correctness
+- [Phase 02]: CLI defaults to dry run (--no-store) for safety
 
 ### Pending Todos
 
@@ -83,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-16T21:28:38.000Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-16T21:38:10.700Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
