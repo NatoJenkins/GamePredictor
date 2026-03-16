@@ -59,6 +59,7 @@ Ingest and validate 20 seasons (2005-2024) of NFL play-by-play and schedule data
 
 ### Data source
 - nfl-data-py PyPI package — primary data source for play-by-play and schedule data (verify column schema at research time)
+- **NOTE (from research):** nfl-data-py was archived Sep 2025. Research recommends nflreadpy as replacement (returns Polars, needs `.to_pandas()`). Plans use nflreadpy — executor MUST verify `pip install nflreadpy` works and API matches before the 20-season load. If nflreadpy fails, fall back to nfl-data-py.
 
 </canonical_refs>
 
@@ -91,7 +92,8 @@ Ingest and validate 20 seasons (2005-2024) of NFL play-by-play and schedule data
 ## Deferred Ideas
 
 - International game flagging (London, Mexico City) for rest/travel feature adjustments — Phase 2 feature engineering concern, not ingestion
-- Playoff game features (different dynamics, bye weeks) — Phase 2 can decide whether to include/exclude playoff data in rolling stats
+- Playoff game features (different dynamics, bye weeks) — Phase 2 MUST filter to `game_type == 'REG'` before computing rolling features. Playoff games are stored but must not pollute rolling stats
+- Phase 2 MUST exclude `total_home_score`, `total_away_score`, `home_score`, `away_score`, `result` from the feature matrix per CLAUDE.md. These are stored in Phase 1 for target variable construction and validation only
 
 </deferred>
 
