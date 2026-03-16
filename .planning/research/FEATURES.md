@@ -74,7 +74,7 @@ Features that set product apart. Not expected, but valued.
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
 | Calibrated probabilities (Platt scaling or isotonic regression) | Raw XGBoost probabilities are often not well-calibrated; "70% confidence" should mean 70% win rate historically | Medium | Post-hoc calibration on validation set. Display calibration curve in dashboard. |
-| Feature importance per prediction (SHAP values) | "Why did the model pick Team A?" -- explainability builds trust | High | SHAP is computationally expensive but XGBoost has fast TreeSHAP. Show top 3-5 contributing features per game. |
+| Feature importance via SHAP (training/eval only) | Understand which features drive predictions, catch leakage signals, validate model behavior | Medium | Compute TreeSHAP during training and log summary to experiments.jsonl. Do NOT expose per-prediction SHAP at inference time — adds dependency, slows serving, and requires significant dashboard design to display meaningfully. Dashboard display is out of scope for v1. |
 | Confidence tiers (high/medium/low) | Not all picks are equal; users want to know which to trust most | Low | Bucket predictions by probability distance from 0.5. Easy to implement, high UX value. |
 | Calibration plot (predicted vs actual win rate) | Visual proof the model's probabilities are meaningful | Medium | Group predictions into probability bins, plot actual win rate vs predicted. |
 
@@ -151,7 +151,7 @@ Key dependency chains:
 - EPA features require play-by-play data (not just game summaries)
 - Opponent-adjusted features require all teams' base features to be computed first
 - Calibrated probabilities require a trained model and a calibration dataset
-- SHAP explanations require a trained model and the feature matrix for each game
+- SHAP (training-time only) requires a trained model and the feature matrix — computed once after training, not at inference
 - The autoresearch loop requires experiment logging to be working first
 - Dashboard accuracy tracking requires stored predictions AND game results
 
@@ -163,16 +163,16 @@ Prioritize (Phase 1 - Get a Working Model):
 3. **XGBoost training with temporal split** and logging to experiments.jsonl
 4. **Binary prediction + raw probability output**
 5. **Basic accuracy tracking** (model vs coin flip vs home-team-always-wins baselines)
+6. **SHAP feature importance** computed post-training, logged to experiments.jsonl — training/eval tool only, not served at inference
 
 Prioritize (Phase 2 - Dashboard + Experiment Loop):
-6. **FastAPI endpoints** for current picks and historical accuracy
-7. **React dashboard** with this-week's-picks view and season accuracy
-8. **MLflow integration** for visual experiment comparison
-9. **Autoresearch experiment loop** (agent-driven iteration on models/train.py)
+7. **FastAPI endpoints** for current picks and historical accuracy
+8. **React dashboard** with this-week's-picks view and season accuracy
+9. **MLflow integration** for visual experiment comparison
+10. **Autoresearch experiment loop** (agent-driven iteration on models/train.py)
 
 Prioritize (Phase 3 - Polish + Advanced Features):
-10. **Probability calibration** (Platt scaling)
-11. **SHAP-based explanations** per prediction
+11. **Probability calibration** (Platt scaling)
 12. **Advanced engineered features** (CPOE, success rate, weighted rolling averages, opponent adjustments)
 13. **Weekly recap view** with correct/incorrect highlighting
 14. **Model performance over time chart**
