@@ -12,6 +12,10 @@ dependencies = [
     "python-dotenv",
     "click",
     "tenacity",
+    "xgboost>=3.2.0",
+    "mlflow>=3.10.0",
+    "shap>=0.51.0",
+    "scikit-learn>=1.5.0",
 ]
 
 [project.optional-dependencies]
