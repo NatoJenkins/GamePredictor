@@ -45,7 +45,7 @@ Declared values (must be multiples of 4):
 | 2xl | 48px | Sidebar width gutters, page top margin |
 | 3xl | 64px | Not used in this phase |
 
-Exceptions: Sidebar width fixed at 240px (not a spacing token — a layout dimension). Minimum card width in picks grid: 280px.
+Exceptions: Sidebar width fixed at 240px desktop / 180px tablet (not a spacing token — a layout dimension). Minimum card width in picks grid: 280px.
 
 ---
 
@@ -53,14 +53,14 @@ Exceptions: Sidebar width fixed at 240px (not a spacing token — a layout dimen
 
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
-| Body | 14px | 400 (regular) | 1.5 | Table cells, card body text, descriptions |
-| Label | 12px | 500 (medium) | 1.4 | Badges, stat labels, sidebar nav items, confidence tiers |
-| Heading | 20px | 600 (semibold) | 1.2 | Page titles, card section headers |
-| Display | 28px | 700 (bold) | 1.1 | Hero stat numbers (accuracy percentage, win probability) |
+| Label | 12px | 400 (regular) | 1.4 | Badges, stat labels, sidebar nav items, confidence tiers |
+| Body | 14px | 400 (regular) | 1.5 | Table cells, card body text, descriptions, sidebar title |
+| Heading | 20px | 600 (semibold) | 1.2 | Page titles, card section headers, predicted winner name |
+| Display | 28px | 600 (semibold) | 1.1 | Hero stat numbers (accuracy percentage, win probability) |
 
 Font stack: `Inter, ui-sans-serif, system-ui, -apple-system, sans-serif`
 
-Monospace for experiment IDs, game IDs, and params: `"JetBrains Mono", ui-monospace, monospace` at 13px weight 400.
+Monospace for experiment IDs, game IDs, and params: `"JetBrains Mono", ui-monospace, monospace` at 12px weight 400. Monospace uses the Label size tier — font family alone distinguishes code context.
 
 ---
 
@@ -110,10 +110,10 @@ Dark mode is the default and only mode for this phase. All values reference CSS 
 
 | Element | shadcn Component | Behavior |
 |---------|-----------------|----------|
-| Nav container | Custom div | Fixed left, 240px wide, full height, zinc-900 bg |
-| Nav item | Button variant="ghost" | Icon (20px) + label (12px medium), 8px gap. Active: blue-500/10 bg + blue-400 text. Hover: zinc-800 bg |
+| Nav container | Custom div | Fixed left, 240px wide (desktop) / 180px wide (tablet), full height, zinc-900 bg |
+| Nav item | Button variant="ghost" | Icon (20px) + label (12px regular), 8px gap. Active: blue-500/10 bg + blue-400 text. Hover: zinc-800 bg |
 | Model status bar | Card | Bottom of sidebar. Shows "Exp #{id}" and "{accuracy}% val acc". Updates from GET /api/model/info via TanStack Query with 5min stale time |
-| App title | Text | "NFL Predictor" at 16px semibold, top of sidebar with 24px padding |
+| App title | Text | "NFL Predictor" at 14px body weight 400, top of sidebar with 24px padding |
 
 ### Nav Items (top to bottom)
 | Icon | Label | Route |
@@ -139,7 +139,7 @@ Dark mode is the default and only mode for this phase. All values reference CSS 
 | away_team  @  home_team          |  <- 14px regular, team names
 |                                  |
 |     [predicted_winner]           |  <- 20px semibold, accent color
-|        68.2%                     |  <- 28px bold (Display), win prob
+|        68.2%                     |  <- 28px semibold (Display), win prob
 |     [High Confidence]            |  <- Badge with tier color
 +----------------------------------+
 ```
@@ -302,10 +302,12 @@ Error icon: AlertCircle from lucide-react, 32px, red-500.
 | Breakpoint | Width | Layout Change |
 |------------|-------|---------------|
 | Desktop (default) | >= 1024px | Sidebar 240px + content area. Picks grid 3 columns. |
-| Tablet | 768px - 1023px | Sidebar collapses to 64px icon-only. Picks grid 2 columns. |
-| Mobile | < 768px | Sidebar becomes top nav bar (horizontal). Picks grid 1 column. Tables scroll horizontally. |
+| Tablet | 768px - 1023px | Sidebar narrows to 180px with smaller labels (icon + label always visible). Picks grid 2 columns. |
+| Mobile | < 768px | Sidebar becomes top nav bar (horizontal, icons + labels in a row). Picks grid 1 column. Tables scroll horizontally. |
 
 Content area max-width: 1200px, centered with auto margins.
+
+Sidebar always shows icon + label at every breakpoint (per CONTEXT.md locked decision: "Always-visible sidebar with icon + label for each nav item (no collapse)"). At tablet width the sidebar uses 180px width with 12px label text and tighter 4px icon-to-label gap to fit the narrower container.
 
 ---
 
