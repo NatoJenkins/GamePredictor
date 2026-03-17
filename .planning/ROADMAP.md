@@ -13,8 +13,8 @@ This roadmap delivers an NFL game prediction system in six phases following a st
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Foundation** - Ingest and validate 20 seasons of NFL data into PostgreSQL with normalized team abbreviations (completed 2026-03-16)
-- [ ] **Phase 2: Feature Engineering** - Compute leakage-safe game-level features with automated temporal validation
-- [ ] **Phase 3: Model Training and Autoresearch** - Train XGBoost classifier via experiment loop, beating trivial baselines on 2023 validation
+- [x] **Phase 2: Feature Engineering** - Compute leakage-safe game-level features with automated temporal validation (completed 2026-03-16)
+- [x] **Phase 3: Model Training and Autoresearch** - Train XGBoost classifier via experiment loop, beating trivial baselines on 2023 validation (completed 2026-03-17)
 - [ ] **Phase 4: Prediction API** - Serve predictions and model metadata via FastAPI endpoints
 - [ ] **Phase 5: Dashboard** - Display weekly picks, season accuracy, experiment scoreboard, and prediction history
 - [ ] **Phase 6: Pipeline and Deployment** - Automate weekly refresh and deploy full stack via Docker Compose
@@ -45,7 +45,7 @@ Plans:
   2. Each row represents one game from the home team perspective with situational features (home/away flag, rest days, week number, divisional game flag) populated
   3. Automated leakage validation tests pass -- confirming no feature for game G uses data from game G or any later game -- and these tests block model training if they fail
   4. Feature matrix covers all seasons 2005-2024 with no gaps in coverage
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 02-01-PLAN.md — Feature definitions, build pipeline, DB schema, and unit tests
@@ -62,12 +62,12 @@ Plans:
   3. The autoresearch loop reads models/program.md, modifies only models/train.py, runs training, and keeps the result only if 2023 validation accuracy improves over the previous best -- otherwise it reverts
   4. The best model beats the always-home baseline (~57%) and the better-record baseline (~60%) on the 2023 validation season specifically
   5. At least 5 logged experiments exist showing iterative improvement with keep/revert decisions recorded
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 03-01-PLAN.md — ML dependencies, baselines module, and baseline unit tests
 - [x] 03-02-PLAN.md — Training pipeline with temporal split, dual logging, TreeSHAP, and multi-season eval
-- [ ] 03-03-PLAN.md — Experiment queue (program.md) and autoresearch loop execution with 5+ experiments
+- [x] 03-03-PLAN.md — Experiment queue (program.md) and autoresearch loop execution with 5+ experiments
 
 ### Phase 4: Prediction API
 **Goal**: Predictions and model metadata are accessible via stable FastAPI endpoints that the dashboard can consume
@@ -122,7 +122,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 2/2 | Complete   | 2026-03-16 |
 | 2. Feature Engineering | 3/3 | Complete | 2026-03-16 |
-| 3. Model Training and Autoresearch | 1/3 | In Progress | - |
+| 3. Model Training and Autoresearch | 3/3 | Complete   | 2026-03-17 |
 | 4. Prediction API | 0/1 | Not started | - |
 | 5. Dashboard | 0/2 | Not started | - |
 | 6. Pipeline and Deployment | 0/2 | Not started | - |

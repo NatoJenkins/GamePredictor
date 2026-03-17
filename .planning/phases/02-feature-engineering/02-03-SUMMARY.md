@@ -58,7 +58,7 @@ Each task was committed atomically:
 
 1. **Task 1: Fix game_features DDL column names and add missing columns** - `04bd28c` (fix)
 
-**Plan metadata:** [pending] (docs: complete plan)
+**Plan metadata:** `3462af6` (docs: complete plan)
 
 ## Files Created/Modified
 - `sql/init.sql` - Fixed game_features CREATE TABLE DDL with correct rolling column names
