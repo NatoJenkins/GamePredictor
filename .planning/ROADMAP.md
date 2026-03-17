@@ -74,10 +74,10 @@ Plans:
 **Depends on**: Phase 3
 **Requirements**: API-01, API-02, API-03, API-04
 **Success Criteria** (what must be TRUE):
-  1. GET /predictions/week/{week} returns the predicted winner and confidence score for each game in the specified week
-  2. GET /predictions/history returns all past predictions paired with actual outcomes
-  3. GET /model/info returns the current model version, training date, and 2023 validation accuracy
-  4. POST /model/reload hot-swaps the serving model to a newly staged version without restarting the server
+  1. GET /api/predictions/week/{week} returns the predicted winner and confidence score for each game in the specified week
+  2. GET /api/predictions/history returns all past predictions paired with actual outcomes
+  3. GET /api/model/info returns the current model version, training date, and 2023 validation accuracy
+  4. POST /api/model/reload hot-swaps the serving model to a newly staged version without restarting the server
 **Plans:** 2 plans
 
 Plans:
@@ -106,7 +106,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Running docker compose up starts all services (postgres, api, mlflow, frontend, worker) and the system is usable end-to-end
   2. Weekly refresh automatically fetches new game data, recomputes features, and stages a retrained candidate model without manual intervention
-  3. A staged model does not go live until POST /model/reload is explicitly called -- the human approval gate prevents automatic deployment of untested models
+  3. A staged model does not go live until POST /api/model/reload is explicitly called -- the human approval gate prevents automatic deployment of untested models
   4. Data and model artifacts persist across container rebuilds via named Docker volumes
 **Plans**: TBD
 
