@@ -66,7 +66,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md — ML dependencies, baselines module, and baseline unit tests
-- [ ] 03-02-PLAN.md — Training pipeline with temporal split, dual logging, TreeSHAP, and multi-season eval
+- [x] 03-02-PLAN.md — Training pipeline with temporal split, dual logging, TreeSHAP, and multi-season eval
 - [ ] 03-03-PLAN.md — Experiment queue (program.md) and autoresearch loop execution with 5+ experiments
 
 ### Phase 4: Prediction API

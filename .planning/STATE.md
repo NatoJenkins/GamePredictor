@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-03-17T00:59:14.000Z"
-last_activity: 2026-03-17 — Completed 03-01-PLAN.md (ML deps + baselines module)
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-03-17T01:08:46.000Z"
+last_activity: 2026-03-17 — Completed 03-02-PLAN.md (training pipeline + tests)
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 8
-  completed_plans: 6
-  percent: 75
+  completed_plans: 7
+  percent: 88
 ---
 
 # Project State
@@ -26,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 ## Current Position
 
 Phase: 3 of 6 (Model Training and Autoresearch)
-Plan: 1 of 3 in current phase (COMPLETE)
-Status: 03-01-PLAN complete, ready for 03-02-PLAN
-Last activity: 2026-03-17 — Completed 03-01-PLAN.md (ML deps + baselines module)
+Plan: 2 of 3 in current phase (COMPLETE)
+Status: 03-02-PLAN complete, ready for 03-03-PLAN
+Last activity: 2026-03-17 — Completed 03-02-PLAN.md (training pipeline + tests)
 
-Progress: [███████░░░] 75%
+Progress: [████████░░] 88%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 4.2min
-- Total execution time: 0.42 hours
+- Total plans completed: 7
+- Average duration: 4.3min
+- Total execution time: 0.50 hours
 
 **By Phase:**
 
@@ -45,10 +45,10 @@ Progress: [███████░░░] 75%
 |-------|-------|-------|----------|
 | 01-data-foundation | 2 | 8min | 4min |
 | 02-feature-engineering | 3 | 10min | 3.3min |
-| 03-model-training-and-autoresearch | 1 | 7min | 7min |
+| 03-model-training-and-autoresearch | 2 | 12min | 6min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (4min), 02-01 (6min), 02-02 (3min), 02-03 (1min), 03-01 (7min)
+- Last 5 plans: 02-01 (6min), 02-02 (3min), 02-03 (1min), 03-01 (7min), 03-02 (5min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -76,6 +76,8 @@ Recent decisions affecting current work:
 - [Phase 02]: DDL column order follows pipeline rolling_cols list order for consistency
 - [Phase 03]: Upgraded pandas 1.5.3 to 2.3.3 for numpy 2.x compatibility (required by ML deps)
 - [Phase 03]: Prior-season lookup uses home perspective first, fills from away perspective only if not already set
+- [Phase 03]: In-sample 2021/2022 evaluation documented as NOT held-out; training includes all 2005-2022
+- [Phase 03]: log_experiment accepts optional jsonl_path parameter for testability
 
 ### Pending Todos
 
@@ -89,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-17T00:59:14.000Z
-Stopped at: Completed 03-01-PLAN.md
-Resume file: .planning/phases/03-model-training-and-autoresearch/03-02-PLAN.md
+Last session: 2026-03-17T01:08:46.000Z
+Stopped at: Completed 03-02-PLAN.md
+Resume file: .planning/phases/03-model-training-and-autoresearch/03-03-PLAN.md
