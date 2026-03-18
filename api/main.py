@@ -17,7 +17,10 @@ async def lifespan(app: FastAPI):
     """Load model and metadata at startup, cleanup on shutdown."""
     # Startup
     app_state["engine"] = get_engine()
-    app_state["model"] = load_best_model(settings.MODEL_PATH)
+    try:
+        app_state["model"] = load_best_model(settings.MODEL_PATH)
+    except FileNotFoundError:
+        app_state["model"] = None
     app_state["model_info"] = get_best_experiment(settings.EXPERIMENTS_PATH)
     yield
     # Shutdown
