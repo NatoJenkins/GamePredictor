@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Model Training and Autoresearch** - Train XGBoost classifier via experiment loop, beating trivial baselines on 2023 validation (completed 2026-03-17)
 - [x] **Phase 4: Prediction API** - Serve predictions and model metadata via FastAPI endpoints (completed 2026-03-17)
 - [x] **Phase 5: Dashboard** - Display weekly picks, season accuracy, experiment scoreboard, and prediction history (completed 2026-03-17)
-- [ ] **Phase 6: Pipeline and Deployment** - Automate weekly refresh and deploy full stack via Docker Compose
+- [x] **Phase 6: Pipeline and Deployment** - Automate weekly refresh and deploy full stack via Docker Compose (completed 2026-03-18)
 
 ## Phase Details
 
@@ -108,11 +108,11 @@ Plans:
   2. Weekly refresh automatically fetches new game data, recomputes features, and stages a retrained candidate model without manual intervention
   3. A staged model does not go live until POST /api/model/reload is explicitly called -- the human approval gate prevents automatic deployment of untested models
   4. Data and model artifacts persist across container rebuilds via named Docker volumes
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 06-01-PLAN.md — Pipeline module (refresh.py + worker.py) with 4-step weekly refresh and APScheduler entrypoint
-- [ ] 06-02-PLAN.md — Docker infrastructure (Dockerfile, Caddyfile, docker-compose.yml) and full 5-service stack configuration
+- [x] 06-01-PLAN.md — Pipeline module (refresh.py + worker.py) with 4-step weekly refresh and APScheduler entrypoint
+- [x] 06-02-PLAN.md — Docker infrastructure (Dockerfile, Caddyfile, docker-compose.yml) and full 5-service stack configuration
 
 ## Progress
 
@@ -126,4 +126,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 3. Model Training and Autoresearch | 3/3 | Complete   | 2026-03-17 |
 | 4. Prediction API | 2/2 | Complete | 2026-03-17 |
 | 5. Dashboard | 2/2 | Complete | 2026-03-17 |
-| 6. Pipeline and Deployment | 0/2 | Not started | - |
+| 6. Pipeline and Deployment | 2/2 | Complete   | 2026-03-18 |

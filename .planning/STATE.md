@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 06-01-PLAN.md
-last_updated: "2026-03-18T04:18:32Z"
-last_activity: 2026-03-18 — Phase 6 plan 01 complete (pipeline refresh + worker)
+status: completed
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-03-18T04:38:15Z"
+last_activity: 2026-03-18 — Phase 6 plan 02 complete (Docker infrastructure). All 14 plans complete.
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 14
-  completed_plans: 13
-  percent: 93
+  completed_plans: 14
+  percent: 100
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-15)
 
 **Core value:** Pre-game win/loss predictions with calibrated confidence scores that beat trivial baselines on the 2023 validation season
-**Current focus:** Phase 6: Pipeline and Deployment (IN PROGRESS)
+**Current focus:** All phases complete. v1.0 milestone reached.
 
 ## Current Position
 
 Phase: 6 of 6 (Pipeline and Deployment)
-Plan: 1 of 2 in current phase (1 complete, 1 remaining)
-Status: Phase 6 plan 01 complete. Pipeline module with 4-step refresh and APScheduler worker created and tested. Plan 02 (Docker/deployment) remaining.
-Last activity: 2026-03-18 — Phase 6 plan 01 complete (pipeline refresh + worker)
+Plan: 2 of 2 in current phase (2 complete, 0 remaining)
+Status: All 14 plans across 6 phases complete. Full Docker Compose stack configured with 5 services. Project milestone v1.0 reached.
+Last activity: 2026-03-18 — Phase 6 plan 02 complete (Docker infrastructure). All 14 plans complete.
 
-Progress: [█████████░] 93% (13/14 plans)
+Progress: [██████████] 100% (14/14 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
-- Average duration: 5.8min
-- Total execution time: 1.25 hours
+- Total plans completed: 14
+- Average duration: 5.9min
+- Total execution time: 1.37 hours
 
 **By Phase:**
 
@@ -48,10 +48,10 @@ Progress: [█████████░] 93% (13/14 plans)
 | 03-model-training-and-autoresearch | 3 | 21min | 7min |
 | 04-prediction-api | 2 | 11min | 5.5min |
 | 05-dashboard | 2 | 19min | 9.5min |
-| 06-pipeline-and-deployment | 1 | 7min | 7min |
+| 06-pipeline-and-deployment | 2 | 19min | 9.5min |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (3min), 04-02 (8min), 05-01 (9min), 05-02 (10min), 06-01 (7min)
+- Last 5 plans: 04-02 (8min), 05-01 (9min), 05-02 (10min), 06-01 (7min), 06-02 (12min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -100,6 +100,12 @@ Recent decisions affecting current work:
 - [Phase 06]: Cache invalidation deletes parquet files before re-downloading -- DB is source of truth
 - [Phase 06]: Step 3 (retrain) non-fatal: failure logged, pipeline continues to step 4 (predictions)
 - [Phase 06]: MLflow tracking URI configurable via MLFLOW_TRACKING_URI env var for Docker
+- [Phase 06]: Multi-stage Dockerfile copies source in both builder and runtime stages for pip install
+- [Phase 06]: MLflow pinned to 2.21.3 instead of :latest to prevent surprise breakage
+- [Phase 06]: Postgres exposes 5432:5432 for local dev -- should be removed for VPS hardening
+- [Phase 06]: Frontend API_BASE defaults to empty string for relative URLs behind Caddy proxy
+- [Phase 06]: Models volume mounted read-only in api, read-write in worker
+- [Phase 06]: MLflow internal-only (no host port mapping) -- access via SSH tunnel
 
 ### Pending Todos
 
@@ -113,6 +119,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-18T04:18:32Z
-Stopped at: Completed 06-01-PLAN.md
-Resume file: .planning/phases/06-pipeline-and-deployment/06-02-PLAN.md
+Last session: 2026-03-18T04:38:15Z
+Stopped at: Completed 06-02-PLAN.md. All plans complete. v1.0 milestone reached.
+Resume file: N/A (all plans complete)
