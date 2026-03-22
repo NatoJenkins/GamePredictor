@@ -1,66 +1,54 @@
 # Phase 6: Pipeline and Deployment - Research
 
-**Researched:** 2026-03-17
-**Domain:** Docker Compose orchestration, APScheduler-based worker pipeline, Caddy reverse proxy, MLflow server deployment
+**Researched:** 2026-03-22 (supersedes 2026-03-17 version)
+**Domain:** Docker Compose orchestration, nginx multi-layer proxy, multi-stage frontend build, MLflow removal, VPS deployment
 **Confidence:** HIGH
 
 ## Summary
 
-Phase 6 transforms the existing NFL Game Predictor from a locally-run development project into a production-ready, Docker Compose-orchestrated system with five services (postgres, api, worker, mlflow, caddy). The project already has all application code in place -- data ingestion, feature engineering, model training, prediction generation, FastAPI API, and a React dashboard. This phase is purely infrastructure: containerization, orchestration, scheduling, and deployment automation.
+Phase 6 containerizes the full NFL Game Predictor stack and deploys it to a Hostinger VPS at `nostradamus.silverreyes.net`. The architecture uses four Docker Compose services (postgres, api, worker, nginx) with a two-layer nginx strategy: an app-level nginx container (port 8080) that serves the React SPA and proxies `/api/*` requests to FastAPI, and the existing VPS system nginx that reverse-proxies the subdomain to localhost:8080 with Certbot SSL. The pre-trained Experiment 5 model (62.9% 2023 validation accuracy) ships in the Docker image and is seeded into a named volume via an entrypoint script on first boot.
 
-The critical complexity lies in three areas: (1) the multi-service Docker Compose configuration with health checks, dependency ordering, and shared named volumes; (2) the APScheduler-based worker process that orchestrates a four-step weekly pipeline with mixed failure modes (steps 1-2 strict, step 3 non-fatal, step 4 always-runs); and (3) the MLflow server configuration requiring a custom Docker image since the official `ghcr.io/mlflow/mlflow` image lacks PostgreSQL drivers.
+This is a re-research driven by significant architecture changes from the updated CONTEXT.md (2026-03-22). The prior research assumed MLflow as a service and Caddy as the edge proxy. Both are now removed. MLflow is stripped from all code (models/train.py, pipeline/refresh.py, tests/models/test_logging.py, pyproject.toml). Caddy is replaced by nginx at two layers. The frontend is no longer pre-built -- it uses a multi-stage Docker build (Node 20 Alpine to build, nginx Alpine to serve).
 
-**Primary recommendation:** Build a single multi-stage Dockerfile for the Python app (shared by api and worker services), a minimal custom Dockerfile for MLflow (adding psycopg2-binary to the official image), and a Caddyfile that serves the pre-built `frontend/dist/` files at root while proxying `/api/*` to the FastAPI container.
+**Primary recommendation:** Execute in two waves: (1) MLflow removal surgery + Docker infrastructure files (Dockerfile updates, nginx.Dockerfile, nginx.conf, entrypoint.sh, docker-compose.yml rewrite, .dockerignore update, .env.example update, pyproject.toml cleanup, test updates), then (2) VPS bootstrap (Docker install, git clone, DNS, VPS nginx server block, Certbot SSL, docker compose up, first interactive data run).
 
 <user_constraints>
 ## User Constraints (from CONTEXT.md)
 
 ### Locked Decisions
-- Single Dockerfile for the Python app, run as two services: `api` (uvicorn) and `worker` (APScheduler)
-- Different entrypoints: `api` runs uvicorn, `worker` runs the scheduler loop
-- Separate manual entry point (`pipeline.refresh`) for one-shot runs via `docker compose exec`
-- MLflow runs as a dedicated service using the official `ghcr.io/mlflow/mlflow` image
-- Caddy replaces nginx as the edge proxy (auto-SSL)
-- Caddy serves `frontend/dist/` static files and proxies `/api/*` to the FastAPI container
-- MLflow server backed by PostgreSQL (separate `mlflow` database on the same postgres instance)
-- `CREATE DATABASE mlflow;` added to `init.sql`
-- MLflow backend URI: `postgresql://nfl:${POSTGRES_PASSWORD}@postgres:5432/mlflow`
-- Artifacts stored on the `mlartifacts` named volume
-- MLflow stays internal-only -- not publicly proxied through Caddy. Access via SSH tunnel
-- Named volumes: `pgdata`, `mlartifacts`, `models`, `caddy_data`
-- Single writer principle: only the worker process writes to experiments.jsonl
-- Native Docker Compose health checks with `depends_on: condition: service_healthy`
-- Postgres health check: `pg_isready -U nfl`
-- API health check: Python-based (avoids curl dependency in slim images)
-- Dependency chain: postgres -> api, postgres -> mlflow, postgres -> worker, api -> caddy
-- APScheduler with CronTrigger inside the worker container
-- Default schedule: Tuesday 6 AM UTC (midnight Central)
-- Schedule configurable via `REFRESH_CRON_HOUR` env var
-- Pipeline sequence: ingest -> recompute features -> retrain (non-fatal) -> generate predictions
-- Staleness check: verify Monday night's game results are present before proceeding
-- Step 3 (retrain) is non-fatal: if it fails, log error, skip, continue to step 4
-- Step 4 always runs if steps 1-2 succeeded
-- Staged model does NOT go live automatically -- human calls POST /model/reload
-- Single `.env` file at project root (gitignored) with actual secrets
-- `.env.example` committed with placeholder values as template
-- `POSTGRES_PASSWORD` is the single source for password -- database URLs constructed in docker-compose.yml
-- Caddy with automatic Let's Encrypt SSL certificate provisioning
-- `caddy_data` volume persists certificates across container rebuilds
-- VPS bootstrap: install Docker, git clone, cp .env.example .env, verify DNS, docker compose up -d, first run interactively
+- **4 services:** `postgres`, `api`, `worker`, `nginx` -- NO MLflow, NO Caddy
+- Single `Dockerfile` for the Python app, run as two services: `api` (uvicorn) and `worker` (APScheduler)
+- Nginx gets its own `docker/nginx.Dockerfile` -- multi-stage build (Node 20 Alpine build, nginx Alpine serve)
+- App nginx container listens on container port 80, bound to host port 8080 (`8080:80`)
+- App nginx routes `/api/*` to `api:8000` and serves frontend at `/`
+- VPS system nginx adds ONE new server block for `nostradamus.silverreyes.net` proxying to `localhost:8080`
+- SSL via Certbot on VPS system nginx -- NOT inside the app's nginx container
+- Frontend build: multi-stage Docker, no committed `dist/`
+- Model volume seeding: `docker/entrypoint.sh` copies image artifacts to named volume on first boot if empty
+- Named volumes: `pgdata` (postgres), `models` (model artifacts) -- no `mlartifacts`, no `caddy_data`
+- API reads model volume read-only (`models:/app/models-vol:ro`), worker reads/writes (`models:/app/models-vol`)
+- MLflow removed entirely from: `models/train.py`, `pipeline/refresh.py`, `pyproject.toml`, docker-compose.yml
+- Files to delete: `mlflow.Dockerfile`, `Caddyfile`
+- Docker install on VPS: `curl -fsSL https://get.docker.com | sh` + `docker-compose-plugin`
+- First data run is interactive: `docker compose exec worker python -m pipeline.refresh`
+- `.env` at project root (gitignored): `POSTGRES_PASSWORD`, `RELOAD_TOKEN`, `REFRESH_CRON_HOUR`
+- `.env.example` committed with placeholder values
 
 ### Claude's Discretion
-- Multi-stage Dockerfile optimization (build vs runtime layers)
-- Exact Caddy container image version
-- Log format and log rotation strategy
-- Worker process management (signal handling, graceful shutdown)
-- APScheduler job store configuration (in-memory vs PostgreSQL-backed)
-- Exact tenacity retry parameters (count, backoff, jitter)
+- Exact `docker/nginx.conf` content (routing rules, proxy headers, try_files for SPA)
+- Exact VPS nginx server block content (proxy_pass headers, timeouts)
+- `docker/entrypoint.sh` defensive logic (cp error handling)
+- Dockerfile layer optimization and `.dockerignore`
+- APScheduler job store configuration (in-memory is fine)
+- Exact tenacity retry parameters in data ingestion
+- Log rotation strategy
 
 ### Deferred Ideas (OUT OF SCOPE)
-- Notification on pipeline failure (email, Slack, etc.)
-- CI/CD pipeline with pre-built images on a registry
-- Monitoring/alerting (Prometheus, Grafana)
-- Automatic model comparison (staged vs current) with metrics diff before reload
+- Notification on pipeline failure (email, Slack) -- v2
+- CI/CD with pre-built images on a registry -- over-engineering for single-VPS
+- Monitoring/alerting (Prometheus, Grafana) -- v2
+- Automatic model comparison (staged vs current) with metrics diff before reload -- v2
+- HTTPS redirect at app nginx level (vs VPS nginx level) -- not needed with VPS nginx handling SSL
 </user_constraints>
 
 <phase_requirements>
@@ -68,10 +56,10 @@ The critical complexity lies in three areas: (1) the multi-service Docker Compos
 
 | ID | Description | Research Support |
 |----|-------------|-----------------|
-| PIPE-01 | Weekly refresh automatically fetches new game data and recomputes features on a schedule (APScheduler) | APScheduler 3.11.x BlockingScheduler with CronTrigger; worker container runs pipeline steps 1-2 (ingest + feature recompute) on Tuesday 6 AM UTC schedule |
-| PIPE-02 | Weekly refresh automatically retrains and stages a candidate model on updated data -- staged only, not live until manual approval | Pipeline step 3 (retrain_and_stage) writes candidate model to shared `models` volume; non-fatal failure mode ensures predictions still run even if retraining fails |
-| PIPE-03 | New model is staged but not live until POST /model/reload is called manually -- human approval gate | Already implemented in api/routes/model.py (Phase 4); worker writes to shared `models` volume, API reads on reload; no new code needed, just correct volume mounting |
-| PIPE-04 | Full stack runs under Docker Compose: postgres, api, mlflow, frontend, worker services | Docker Compose with 5 services (postgres, api, mlflow, caddy, worker); health checks + depends_on ordering; named volumes for persistence |
+| PIPE-01 | Weekly refresh automatically fetches new game data and recomputes features on a schedule (APScheduler) | APScheduler 3.x BlockingScheduler with CronTrigger already implemented in `pipeline/worker.py` -- no changes needed. Worker container runs steps 1-2 (ingest + feature recompute) on Tuesday 6 AM UTC |
+| PIPE-02 | Weekly refresh automatically retrains and stages a candidate model on updated data -- staged only, not live until manual approval | Pipeline step 3 (retrain_and_stage) in `pipeline/refresh.py` -- needs MLflow removal only. Writes candidate model to shared `models` volume; non-fatal failure mode ensures predictions still run |
+| PIPE-03 | New model is staged but not live until POST /model/reload is called manually -- human approval gate | Already implemented in `api/routes/model.py` (Phase 4). Worker writes to shared `models` volume, API reads on reload. No new code needed, just correct volume mounting |
+| PIPE-04 | Full stack runs under Docker Compose: postgres, api, worker, nginx services | Docker Compose with 4 services; health checks + depends_on ordering; named volumes for persistence. Updated from original requirement's 5 services (MLflow removed) |
 </phase_requirements>
 
 ## Standard Stack
@@ -80,328 +68,338 @@ The critical complexity lies in three areas: (1) the multi-service Docker Compos
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
 | Docker Compose | v2 (built-in) | Service orchestration | Standard for multi-container apps on single host |
-| APScheduler | 3.11.x | Cron-based job scheduling in worker | Mature, stable, BlockingScheduler ideal for dedicated process |
-| Caddy | 2.11.x | Edge proxy with auto-SSL | Zero-config Let's Encrypt, simpler than nginx for single-site |
-| MLflow | 3.10.x | Experiment tracking server | Already used locally; moving to server mode with PostgreSQL backend |
-| PostgreSQL | 16-alpine | Primary database (+ MLflow backend) | Already in use; adding second database for MLflow |
+| nginx | alpine (1.29.x) | App-level reverse proxy + SPA server | Standard production web server; dual-layer architecture with VPS nginx |
+| node | 20-alpine (20.20.x) | Frontend build stage | LTS version matching `frontend/package.json` dev environment |
+| PostgreSQL | 16-alpine | Primary database | Already in use, unchanged |
+| APScheduler | 3.x (already installed) | Cron-based job scheduling | Already implemented in `pipeline/worker.py`, no changes needed |
+| Certbot | (VPS system) | SSL certificate provisioning | Standard Let's Encrypt client for VPS system nginx |
 
 ### Supporting
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| psycopg2-binary | latest | PostgreSQL driver for MLflow image | Required -- official MLflow image lacks PostgreSQL support |
-| tenacity | (already installed) | Retry logic for data fetching | Already used in data/loaders.py; reuse for pipeline staleness checks |
+| python:3.11-slim | (already in Dockerfile) | Python app runtime | Base image for api and worker services |
+| tenacity | (already installed) | Retry logic for data fetching | Already used in data/loaders.py, no changes needed |
 
 ### Alternatives Considered
 | Instead of | Could Use | Tradeoff |
 |------------|-----------|----------|
-| APScheduler | cron (system) | cron requires host-level config; APScheduler keeps everything in Python/Docker |
-| Caddy | nginx | nginx requires manual cert management; Caddy auto-provisions SSL |
-| BlockingScheduler | AsyncIOScheduler | AsyncIO unnecessary -- worker is a dedicated process, no web server |
-
-**Installation:**
-```bash
-# Add to pyproject.toml dependencies
-pip install "APScheduler>=3.10,<4.0"
-
-# MLflow custom image installs psycopg2-binary at build time
-```
+| nginx (app container) | Caddy | Caddy has auto-SSL but VPS already has nginx + Certbot; nginx avoids mixing proxy technologies |
+| Multi-stage nginx.Dockerfile | Pre-commit `npm run build` | Multi-stage keeps build artifacts out of git; self-contained builds |
+| VPS system nginx + Certbot | Traefik | Traefik is container-native but VPS already runs nginx for other sites |
 
 **Version verification:**
-- APScheduler: 3.11.2 on PyPI (confirmed via pypi.org, March 2026)
-- Caddy: 2.11.2 on Docker Hub (confirmed via hub.docker.com, March 2026)
-- MLflow: 3.10.1 on PyPI and ghcr.io (confirmed via pypi.org, March 2026)
-- PostgreSQL: 16-alpine already in use in current docker-compose.yml
+- nginx: `alpine` tag currently resolves to 1.29.6 on Docker Hub (March 2026)
+- node: `20-alpine` tag currently resolves to 20.20.1 on Docker Hub (March 2026)
+- PostgreSQL: `16-alpine` already in docker-compose.yml, unchanged
+- APScheduler: 3.x already in pyproject.toml (`>=3.10,<4.0`), no version change needed
 
 ## Architecture Patterns
 
-### Recommended Project Structure
+### Recommended Project Structure (files to create/modify)
 ```
 project-root/
-|-- docker-compose.yml          # Full 5-service orchestration
-|-- Dockerfile                  # Multi-stage: Python app (api + worker)
-|-- Caddyfile                   # Edge proxy configuration
-|-- mlflow.Dockerfile           # Custom MLflow image with psycopg2
-|-- .env.example                # Template (committed)
-|-- .env                        # Real secrets (gitignored, already exists)
-|-- sql/
-|   +-- init.sql                # DDL + CREATE DATABASE mlflow
-|-- pipeline/
-|   |-- __init__.py
-|   |-- refresh.py              # Pipeline steps (ingest, features, retrain, predict)
-|   +-- worker.py               # APScheduler entrypoint (CronTrigger + signal handling)
-|-- api/                        # (existing) FastAPI application
-|-- models/                     # (existing) Training and prediction code
-|-- data/                       # (existing) Ingestion and data loading
-|-- features/                   # (existing) Feature engineering
-+-- frontend/
-    +-- dist/                   # (existing) Pre-built React dashboard
+|-- docker-compose.yml          # MODIFY: 4 services (was 5), 2 volumes (was 4)
+|-- Dockerfile                  # MODIFY: add entrypoint.sh COPY + ENTRYPOINT
+|-- .dockerignore               # MODIFY: add frontend/node_modules, frontend/dist
+|-- .env.example                # MODIFY: remove DOMAIN, keep POSTGRES_PASSWORD/RELOAD_TOKEN/REFRESH_CRON_HOUR
+|-- pyproject.toml              # MODIFY: remove mlflow dependency
+|-- docker/
+|   |-- nginx.Dockerfile        # CREATE: multi-stage Node+nginx build
+|   |-- nginx.conf              # CREATE: SPA try_files + /api/ proxy_pass
+|   +-- entrypoint.sh           # CREATE: model volume seeding script
+|-- models/train.py             # MODIFY: strip MLflow imports, setup_mlflow(), mlflow.start_run block
+|-- pipeline/refresh.py         # MODIFY: strip MLflow import, setup block, setup_mlflow from imports
+|-- tests/models/test_logging.py # MODIFY: remove MLflow tests (TestMlflowLogging class)
+|-- mlflow.Dockerfile           # DELETE
++-- Caddyfile                   # DELETE
 ```
 
-### Pattern 1: Single Dockerfile, Two Services
-**What:** One multi-stage Dockerfile produces a single image; docker-compose runs it twice with different entrypoints.
-**When to use:** When two services share the same codebase and dependencies (api and worker here).
+### Pattern 1: Multi-Stage nginx.Dockerfile (Frontend Build + Serve)
+**What:** Two-stage Dockerfile: Stage 1 uses node:20-alpine to build the Vite React app; Stage 2 uses nginx:alpine to serve the static output and proxy API requests.
+**When to use:** When the frontend should not be pre-built or committed to git.
 **Example:**
 ```dockerfile
-# Stage 1: Build dependencies
-FROM python:3.11-slim AS builder
-WORKDIR /app
-COPY pyproject.toml .
-RUN pip install --no-cache-dir --prefix=/install .
+# Stage 1: Build frontend
+FROM node:20-alpine AS builder
+WORKDIR /app/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
 
-# Stage 2: Runtime
-FROM python:3.11-slim AS runtime
-WORKDIR /app
-COPY --from=builder /install /usr/local
-COPY . .
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-# Entrypoint set in docker-compose.yml per service
+# Stage 2: Serve with nginx
+FROM nginx:alpine
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html
+EXPOSE 80
 ```
+**Key details:**
+- Build context for this Dockerfile must be the project root (needs `frontend/` directory)
+- `npm run build` command is `tsc -b && vite build` (from package.json scripts)
+- Vite outputs to `frontend/dist/` by default
+- The nginx default.conf is replaced entirely with our custom config
 
-```yaml
-# docker-compose.yml (relevant sections)
-services:
-  api:
-    build: .
-    command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
-  worker:
-    build: .
-    command: ["python", "-m", "pipeline.worker"]
-```
-
-### Pattern 2: APScheduler BlockingScheduler with Graceful Shutdown
-**What:** Dedicated worker process using BlockingScheduler with SIGTERM signal handler for clean Docker stop.
-**When to use:** When the scheduler is the sole purpose of the container.
+### Pattern 2: nginx.conf for SPA + API Proxy
+**What:** nginx configuration that serves the SPA with `try_files` fallback to `index.html` for client-side routing, and proxies `/api/` requests to the FastAPI backend container.
+**When to use:** When nginx serves both static frontend and proxies to a backend in Docker Compose.
 **Example:**
-```python
-import signal
-import logging
-from apscheduler.schedulers.blocking import BlockingScheduler
-from apscheduler.triggers.cron import CronTrigger
+```nginx
+server {
+    listen 80;
+    server_name _;
 
-logger = logging.getLogger(__name__)
-scheduler = BlockingScheduler()
+    root /usr/share/nginx/html;
+    index index.html;
 
-def shutdown(signum, frame):
-    logger.info("Received shutdown signal, stopping scheduler...")
-    scheduler.shutdown(wait=True)
-
-def weekly_refresh():
-    """Four-step pipeline with mixed failure modes."""
-    # Step 1: Ingest (strict)
-    # Step 2: Recompute features (strict)
-    # Step 3: Retrain and stage (non-fatal)
-    # Step 4: Generate predictions (always if steps 1-2 OK)
-
-signal.signal(signal.SIGTERM, shutdown)
-signal.signal(signal.SIGINT, shutdown)
-
-scheduler.add_job(
-    weekly_refresh,
-    CronTrigger(day_of_week="tue", hour=6, timezone="UTC"),
-    id="weekly_refresh",
-    max_instances=1,
-    replace_existing=True,
-)
-scheduler.start()
-```
-
-### Pattern 3: Caddy SPA + API Proxy
-**What:** Caddy serves pre-built React files with SPA fallback, proxies API requests to backend.
-**When to use:** Single-domain deployment with frontend and backend.
-**Example:**
-```
-{$DOMAIN:localhost} {
-    encode
-
-    handle /api/* {
-        reverse_proxy api:8000
+    # SPA client-side routing: try the file, then directory, then fall back to index.html
+    location / {
+        try_files $uri $uri/ /index.html;
     }
 
-    handle {
-        root * /srv
-        try_files {path} /index.html
-        file_server
+    # Proxy API requests to FastAPI backend
+    location /api/ {
+        proxy_pass http://api:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
+
+    # Gzip compression for text assets
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml;
+    gzip_min_length 256;
 }
 ```
+**Key details:**
+- `server_name _;` is a catch-all -- the VPS system nginx handles domain routing
+- `try_files $uri $uri/ /index.html` enables React Router's client-side navigation
+- `/api/` location block uses Docker Compose service name `api` as hostname (DNS resolution within compose network)
+- Proxy headers are standard: Host, X-Real-IP, X-Forwarded-For, X-Forwarded-Proto
+- Gzip compression reduces payload sizes for text assets
 
-### Pattern 4: PostgreSQL Init Script for Multiple Databases
-**What:** Use `docker-entrypoint-initdb.d` scripts to create both the application database and the MLflow database.
-**When to use:** When a single PostgreSQL instance serves multiple databases.
+### Pattern 3: VPS System nginx Reverse Proxy Server Block
+**What:** A server block file on the VPS system nginx that proxies the subdomain to the Docker Compose app's nginx container on localhost:8080.
+**When to use:** When the VPS already runs nginx for other sites and the app needs its own subdomain.
 **Example:**
-```sql
--- At the TOP of init.sql (before table creation)
--- Create MLflow database (runs as superuser during init)
-SELECT 'CREATE DATABASE mlflow OWNER nfl'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'mlflow')\gexec
+```nginx
+server {
+    listen 80;
+    server_name nostradamus.silverreyes.net;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+# After running: sudo certbot --nginx -d nostradamus.silverreyes.net
+# Certbot modifies this block to add:
+#   listen 443 ssl;
+#   ssl_certificate /etc/letsencrypt/live/nostradamus.silverreyes.net/fullchain.pem;
+#   ssl_certificate_key /etc/letsencrypt/live/nostradamus.silverreyes.net/privkey.pem;
+#   include /etc/letsencrypt/options-ssl-nginx.conf;
+#   ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+# And adds a separate server block for 80->443 redirect.
 ```
-**Important note:** PostgreSQL init scripts in `docker-entrypoint-initdb.d` run against the default database (`nflpredictor` in this case). Creating a second database requires explicit SQL. The `\gexec` approach or a separate shell script handles this. Alternatively, a simpler approach is a shell script:
-```bash
-#!/bin/bash
-set -e
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
-    CREATE DATABASE mlflow OWNER nfl;
-EOSQL
+**File location:** `/etc/nginx/sites-available/nostradamus.silverreyes.net`
+**Activation:** `sudo ln -s /etc/nginx/sites-available/nostradamus.silverreyes.net /etc/nginx/sites-enabled/`
+
+### Pattern 4: Entrypoint Volume Seeding
+**What:** Shell script that copies seed files from the Docker image to a named volume on first boot, then exec's the CMD.
+**When to use:** When pre-trained model artifacts need to populate a shared named volume before the app starts.
+**Example:**
+```sh
+#!/bin/sh
+# Seed models volume on first boot if volume is empty
+MODEL_VOL="/app/models-vol"
+if [ ! -f "$MODEL_VOL/best_model.json" ]; then
+    echo "[entrypoint] Seeding models volume from image..."
+    cp /app/models/artifacts/best_model.json "$MODEL_VOL/" || echo "[entrypoint] WARNING: failed to copy best_model.json"
+    cp /app/models/experiments.jsonl "$MODEL_VOL/" || echo "[entrypoint] WARNING: failed to copy experiments.jsonl"
+fi
+exec "$@"
 ```
+**Key details:**
+- `exec "$@"` replaces the shell process with the CMD, ensuring the CMD process becomes PID 1 and receives signals (SIGTERM for graceful shutdown)
+- The seeding check uses `[ ! -f "$MODEL_VOL/best_model.json" ]` -- idempotent, won't overwrite on restarts
+- Both `api` and `worker` services run this entrypoint, but only the `worker` has write access to the volume so only the worker's entrypoint copy actually succeeds on first boot
+- The API mounts the volume as read-only (`:ro`), so its entrypoint seed attempt will silently fail if the volume is already populated by the worker (which starts first via depends_on chain: postgres -> worker starts, postgres -> api starts). If worker hasn't populated yet, the API entrypoint will fail the copy but the API's lifespan handles a missing model gracefully (sets `app_state["model"] = None`)
+
+**IMPORTANT:** The worker service does NOT depend on api, so both worker and api start after postgres becomes healthy. The worker is the one that should seed the volume since it has write access. The `api` service mounts read-only and will simply skip seeding (the `cp` will fail silently with the `||` guard). This is fine because the API already handles a missing model file gracefully in its lifespan handler.
+
+### Pattern 5: ENTRYPOINT + CMD Interaction
+**What:** Dockerfile `ENTRYPOINT` wraps the `CMD` from docker-compose.yml.
+**When to use:** When the same image needs pre-startup logic (volume seeding) regardless of which CMD is used.
+**Example:**
+```dockerfile
+# In Dockerfile (runtime stage)
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+```yaml
+# In docker-compose.yml, CMD is overridden per service:
+services:
+  api:
+    command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+  worker:
+    command: ["python", "-m", "pipeline.worker"]
+```
+**How it works:** Docker combines ENTRYPOINT and CMD into a single command. When compose overrides `command:`, it replaces CMD but ENTRYPOINT stays. So `worker` actually runs `/entrypoint.sh python -m pipeline.worker`, which seeds the volume then `exec`s the worker process.
 
 ### Anti-Patterns to Avoid
-- **Running cron on the host:** Breaks containerization; use APScheduler inside the worker container.
-- **Installing curl in slim Python images just for health checks:** Use Python-based health checks instead (`python -c "import urllib.request; urllib.request.urlopen(...)"`).
-- **Sharing a single database for app and MLflow without separate databases:** MLflow creates its own tables and migrations; mixing with app tables creates confusion.
-- **Exposing MLflow to the internet:** MLflow has no authentication by default; keep it internal-only, access via SSH tunnel.
-- **Writing to experiments.jsonl from multiple processes:** Single writer principle -- only worker writes, API reads. Prevents file corruption.
+- **Running cron on the host:** Breaks containerization; APScheduler inside the worker container is already implemented and correct
+- **Installing curl in slim Python images for health checks:** Use Python-based health checks (`python -c "import urllib.request; urllib.request.urlopen(...)"`) -- already done
+- **Committing frontend/dist/ to git:** Multi-stage Docker build handles this; dist/ should be in .dockerignore
+- **Mixing SSL termination layers:** SSL is at VPS system nginx ONLY; app nginx container stays plain HTTP
+- **Using `CMD` shell form:** Always use exec form `CMD ["python", "-m", "pipeline.worker"]` so the process is PID 1 and receives SIGTERM
 
 ## Don't Hand-Roll
 
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
-| SSL certificate management | Custom certbot scripts | Caddy auto-SSL | Caddy handles issuance, renewal, OCSP stapling automatically |
-| Cron scheduling in Docker | Host crontab + docker exec | APScheduler in worker container | Self-contained, Python-native, configurable via env vars |
-| Health check ordering | Custom wait-for scripts | Docker Compose `depends_on: condition: service_healthy` | Native Docker Compose feature, no extra tooling |
-| PostgreSQL readiness | Custom TCP probes | `pg_isready -U nfl` | Purpose-built tool included in postgres image |
-| Process signal handling | Custom PID management | `signal.signal(SIGTERM, handler)` + `CMD ["python", ...]` (exec form) | Python stdlib + Docker exec form ensures PID 1 receives signals |
+| SSL certificate management | Custom certbot scripts inside container | VPS system nginx + `certbot --nginx` | Certbot auto-modifies nginx config, handles renewal via systemd timer |
+| Frontend build pipeline in CI | Custom build scripts, committed dist/ | Multi-stage Docker build | Self-contained, reproducible, no Node.js needed on host |
+| Volume initialization | Init containers, manual docker cp | Entrypoint script with first-boot check | Runs automatically, idempotent, standard Docker pattern |
+| Health check ordering | wait-for-it scripts | Docker Compose `depends_on: condition: service_healthy` | Native Docker Compose feature, already configured |
+| API readiness probe | curl/wget in slim image | `python -c "import urllib.request; ..."` | No extra deps, already implemented |
 
-**Key insight:** Every infrastructure concern in this phase has a standard solution. The only custom code needed is the pipeline orchestration logic (`pipeline/refresh.py`) which wires together existing functions from `data/`, `features/`, `models/`.
+**Key insight:** All infrastructure in this phase uses standard Docker and nginx patterns. The only custom code changes are MLflow removal (deletion, not creation) and new configuration files (nginx.conf, entrypoint.sh, nginx.Dockerfile).
 
 ## Common Pitfalls
 
-### Pitfall 1: MLflow Official Image Missing PostgreSQL Drivers
-**What goes wrong:** `ghcr.io/mlflow/mlflow` does not include `psycopg2` or `psycopg2-binary`. MLflow server fails to start with a connection error to the PostgreSQL backend store.
-**Why it happens:** The official image is designed to be minimal; database drivers are opt-in.
-**How to avoid:** Create a `mlflow.Dockerfile` that extends the official image and adds `pip install psycopg2-binary`.
-**Warning signs:** MLflow container exits immediately with "No module named 'psycopg2'" or connection refused errors.
+### Pitfall 1: Frontend Build Failure in Docker (Missing package-lock.json)
+**What goes wrong:** `npm ci` fails because `package-lock.json` is missing or not copied into the build stage.
+**Why it happens:** `npm ci` requires an exact `package-lock.json` (unlike `npm install`). If only `package.json` is copied, it fails.
+**How to avoid:** Copy both `package.json` and `package-lock.json` in the COPY step before `npm ci`. Verify `package-lock.json` exists in the `frontend/` directory.
+**Warning signs:** Docker build fails at the `npm ci` step with "npm ERR! The `npm ci` command can only install with an existing package-lock.json".
 
-### Pitfall 2: Docker CMD Shell Form vs Exec Form (Signal Handling)
-**What goes wrong:** Worker container ignores SIGTERM on `docker stop`, waits 10 seconds, then gets SIGKILL. In-flight pipeline step is killed ungracefully.
-**Why it happens:** `CMD python -m pipeline.worker` (shell form) runs under `/bin/sh`, which becomes PID 1. The Python process (PID 2+) never receives SIGTERM.
-**How to avoid:** Use exec form: `CMD ["python", "-m", "pipeline.worker"]` so Python is PID 1 and receives SIGTERM directly. Register SIGTERM handler in worker code.
-**Warning signs:** `docker stop` takes exactly 10 seconds (the default grace period) instead of stopping quickly.
+### Pitfall 2: nginx.Dockerfile Build Context
+**What goes wrong:** The nginx.Dockerfile can't find `frontend/` because the build context is wrong.
+**Why it happens:** If `build: docker/nginx.Dockerfile` is used without specifying context, Docker uses the `docker/` directory as context, not the project root.
+**How to avoid:** In docker-compose.yml, set both `context: .` (project root) and `dockerfile: docker/nginx.Dockerfile`:
+```yaml
+nginx:
+  build:
+    context: .
+    dockerfile: docker/nginx.Dockerfile
+```
+**Warning signs:** Docker build error "COPY failed: file not found in build context".
 
-### Pitfall 3: Cache Invalidation for Weekly Data Refresh
-**What goes wrong:** `data/loaders.py` caches Parquet files in `data/cache/`. The pipeline ingests new data but the cache returns stale data on subsequent calls.
-**Why it happens:** The loaders check if `data/cache/pbp_{season}.parquet` exists and return it without checking freshness.
-**How to avoid:** The pipeline's ingest step must either (a) delete the current season's cache files before re-downloading, or (b) bypass the cache entirely for the current season. Since the worker is the only process that refreshes data, it can safely delete `data/cache/pbp_{current_season}.parquet` and `data/cache/schedules_{current_season}.parquet` before calling the loaders.
-**Warning signs:** Pipeline reports success but features/predictions don't reflect new game results.
+### Pitfall 3: CORS_ORIGINS Not Including Production Domain
+**What goes wrong:** API returns CORS errors when accessed from the production domain.
+**Why it happens:** `api/config.py` has `CORS_ORIGINS` hardcoded to `["http://localhost:3000", "http://localhost:5173"]`.
+**How to avoid:** This is NOT actually a problem. The frontend uses relative URLs (`/api/...`) and is served by the same nginx container that proxies to the API. All requests are same-origin from the browser's perspective. CORS headers are only needed for cross-origin requests (e.g., direct API access from a different domain). The hardcoded localhost values only matter for local development.
+**Warning signs:** None expected in production. Only an issue if someone tries to call the API from a different domain.
 
-### Pitfall 4: PostgreSQL Init Scripts Only Run on Empty Data Volume
-**What goes wrong:** After updating `init.sql` to add `CREATE DATABASE mlflow`, rebuilding containers doesn't run the init script because `pgdata` volume already has data.
-**Why it happens:** PostgreSQL Docker image only runs `docker-entrypoint-initdb.d` scripts when initializing a new data directory.
-**How to avoid:** For existing deployments, manually run `CREATE DATABASE mlflow;` via `docker compose exec postgres psql -U nfl -c "CREATE DATABASE mlflow;"`. For fresh deployments, init.sql handles it.
-**Warning signs:** MLflow container fails to connect because the `mlflow` database doesn't exist.
+### Pitfall 4: Docker CMD Shell Form vs Exec Form (Signal Handling)
+**What goes wrong:** Worker container ignores SIGTERM on `docker stop`, waits 10 seconds, then gets SIGKILL.
+**Why it happens:** Shell form `CMD python -m pipeline.worker` runs under `/bin/sh` as PID 1. Python process never receives SIGTERM.
+**How to avoid:** Use exec form: `CMD ["python", "-m", "pipeline.worker"]`. Already correct in current docker-compose.yml.
+**Warning signs:** `docker stop` takes exactly 10 seconds (default grace period).
 
-### Pitfall 5: Volume Permissions Between Containers
-**What goes wrong:** Worker writes model artifacts to the `models` volume as one UID; API container running as a different UID can't read them.
-**Why it happens:** Default user differs between container configurations.
-**How to avoid:** Both api and worker use the same Dockerfile, so they run as the same user. Don't introduce USER directives that differ between services.
-**Warning signs:** API returns 500 on `/model/reload` with "Permission denied" reading model file.
+### Pitfall 5: PostgreSQL Init Scripts Only Run on Empty Data Volume
+**What goes wrong:** After modifying `sql/init.sql`, the changes don't take effect because `pgdata` volume already has data.
+**Why it happens:** PostgreSQL only runs `docker-entrypoint-initdb.d` scripts when initializing a new data directory.
+**How to avoid:** For fresh deployments (VPS), this is not an issue -- first `docker compose up` runs init.sql. For existing local dev environments, manually apply schema changes.
+**Warning signs:** Tables or databases expected from init.sql don't exist.
 
-### Pitfall 6: MLflow setup_mlflow() Hardcodes File-Based Tracking
-**What goes wrong:** `models/train.py` calls `setup_mlflow()` which sets `mlflow.set_tracking_uri("file:./mlruns")`. When running in Docker, this creates a local mlruns directory inside the container instead of using the MLflow tracking server.
-**Why it happens:** The current code was written for local development.
-**How to avoid:** The worker's retrain step should set `MLFLOW_TRACKING_URI` environment variable to `http://mlflow:5000` before importing/calling training code, OR override the tracking URI in the pipeline's retrain wrapper. The `setup_mlflow()` function should respect the `MLFLOW_TRACKING_URI` env var if set.
-**Warning signs:** MLflow server dashboard shows no runs while experiments.jsonl has entries.
+### Pitfall 6: Entrypoint Seeding Race Condition
+**What goes wrong:** API starts before worker seeds the volume, finds no model file.
+**Why it happens:** Both api and worker start after postgres is healthy; api might check for the model before worker copies it.
+**How to avoid:** The API already handles this gracefully in its lifespan handler -- if `load_best_model` raises `FileNotFoundError`, it sets `app_state["model"] = None`. The API returns 503 until the model is available. Additionally, both services run the entrypoint, so whichever starts first seeds the volume (worker has write access, api's attempt will succeed too since the volume is read-write at the filesystem level during the entrypoint, before the `:ro` mount takes effect... actually, `:ro` is enforced at mount time, so only the worker can seed). In practice, the worker seeds on first boot, and the API will either find the model or handle its absence.
+**Warning signs:** API returns 503 on model endpoints immediately after deployment, resolves after worker starts.
 
-### Pitfall 7: Frontend API URL Hardcoded to localhost
-**What goes wrong:** React dashboard makes API calls to `http://localhost:5173/api/...` or similar dev URL in production.
-**Why it happens:** Vite dev server proxy or hardcoded base URLs.
-**How to avoid:** Frontend API client should use relative URLs (`/api/...`) which Caddy proxies. Verify the frontend build uses relative paths, not absolute localhost URLs.
-**Warning signs:** Dashboard shows loading spinners indefinitely in production.
+### Pitfall 7: MLflow Import Left Behind in Tests
+**What goes wrong:** Tests fail after MLflow removal because `tests/models/test_logging.py` still imports `mlflow` and `setup_mlflow`.
+**Why it happens:** MLflow removal focuses on production code but tests also import MLflow directly.
+**How to avoid:** The test file `tests/models/test_logging.py` must be updated: remove `import mlflow`, remove `from models.train import ... setup_mlflow`, remove the entire `TestMlflowLogging` class (3 tests), and update `TestJsonlLogging` tests to not call MLflow setup.
+**Warning signs:** `pytest tests/models/test_logging.py` fails with `ModuleNotFoundError: No module named 'mlflow'` after removing mlflow from pyproject.toml.
+
+### Pitfall 8: .dockerignore Missing frontend/node_modules
+**What goes wrong:** Docker build copies `frontend/node_modules/` into the build context, making the build slow and bloated.
+**Why it happens:** Current `.dockerignore` has `frontend/node_modules` but this only affects the Python app Dockerfile. The nginx.Dockerfile also needs this ignored.
+**How to avoid:** Verify `.dockerignore` includes `frontend/node_modules` and `frontend/dist` -- it already has `frontend/node_modules`. Add `frontend/dist` if missing. Both Dockerfiles share the `.dockerignore` when using project root as build context.
+**Warning signs:** Docker build takes unexpectedly long; image size is hundreds of MB larger than expected.
 
 ## Code Examples
 
-### Pipeline Refresh Module Structure
+### MLflow Removal: models/train.py -- Exact Surgery
+
+**Lines to delete (verified against current file):**
+
+1. **Line 20:** `import mlflow` -- delete entire line
+2. **Lines 33-40:** `def setup_mlflow():` function -- delete entire function (8 lines)
+3. **Lines 237-253:** MLflow logging block inside `log_experiment()` -- delete the `with mlflow.start_run(...)` block and all its contents. The function stays; it still writes to experiments.jsonl (lines 211-234).
+4. **Line 375:** `setup_mlflow()` call in `run_experiment()` -- delete this line
+5. **Docstrings:** Update function/module docstrings to remove references to "MLflow" and "dual logging"
+
+**After removal, `log_experiment()` becomes:**
 ```python
-# pipeline/refresh.py
-"""Weekly pipeline: ingest -> features -> retrain -> predict."""
-import logging
-from datetime import datetime
-
-logger = logging.getLogger(__name__)
-
-def run_pipeline():
-    """Execute the four-step weekly refresh pipeline.
-
-    Steps 1-2: Strict stop-on-failure (data must be fresh)
-    Step 3: Non-fatal (retraining is opportunistic)
-    Step 4: Always runs if steps 1-2 succeeded
-    """
-    logger.info("Pipeline started at %s", datetime.utcnow().isoformat())
-
-    # Step 1: Ingest new data
-    try:
-        ingest_new_data()
-    except Exception:
-        logger.exception("Step 1 FAILED: ingest_new_data")
-        return  # Hard stop
-
-    # Step 2: Recompute features
-    try:
-        recompute_features()
-    except Exception:
-        logger.exception("Step 2 FAILED: recompute_features")
-        return  # Hard stop
-
-    # Step 3: Retrain and stage (NON-FATAL)
-    try:
-        retrain_and_stage()
-    except Exception:
-        logger.exception("Step 3 FAILED (non-fatal): retrain_and_stage -- continuing to predictions")
-
-    # Step 4: Generate predictions (always runs if data is fresh)
-    try:
-        generate_current_predictions()
-    except Exception:
-        logger.exception("Step 4 FAILED: generate_predictions")
-
-    logger.info("Pipeline completed at %s", datetime.utcnow().isoformat())
+def log_experiment(
+    experiment_id, params, features_used, val_acc_2023, val_acc_2022, val_acc_2021,
+    baseline_home, baseline_record, log_loss_val, brier_score_val, shap_top5,
+    keep, hypothesis, prev_best_acc, model_path, jsonl_path="models/experiments.jsonl",
+):
+    entry = {
+        "experiment_id": experiment_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        # ... all existing fields ...
+    }
+    # Append to JSONL (append-only, CLAUDE.md rule)
+    with open(jsonl_path, "a") as f:
+        f.write(json.dumps(entry) + "\n")
+    # MLflow block REMOVED -- was here
 ```
 
-### Worker Entrypoint with Signal Handling
-```python
-# pipeline/worker.py
-"""APScheduler-based worker entrypoint for Docker container."""
-import os
-import signal
-import logging
-from apscheduler.schedulers.blocking import BlockingScheduler
-from apscheduler.triggers.cron import CronTrigger
-from pipeline.refresh import run_pipeline
+**Exports affected:** `setup_mlflow` is no longer exported. Update any imports of it.
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
-)
-logger = logging.getLogger(__name__)
+### MLflow Removal: pipeline/refresh.py -- Exact Surgery
 
-scheduler = BlockingScheduler()
+**Lines to delete (verified against current file):**
 
-def shutdown(signum, frame):
-    logger.info("Received signal %s, shutting down scheduler...", signum)
-    scheduler.shutdown(wait=True)
+1. **Line 8:** `import mlflow` -- delete entire line
+2. **Lines 143-151:** Inside `retrain_and_stage()`, the import block:
+   ```python
+   from models.train import (
+       DEFAULT_PARAMS,
+       load_and_split,
+       log_experiment,
+       save_best_model,
+       setup_mlflow,    # <-- REMOVE THIS LINE ONLY
+       should_keep,
+       train_and_evaluate,
+   )
+   ```
+   Remove `setup_mlflow,` from the import list (line 148). Keep all other imports.
+3. **Lines 154-159:** The MLflow setup block:
+   ```python
+   if os.environ.get("MLFLOW_TRACKING_URI"):
+       mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+       mlflow.set_experiment("nfl-game-predictor")
+   else:
+       setup_mlflow()
+   ```
+   Delete these 5 lines entirely. Also remove the `import os` line ONLY IF no other code in the function uses `os` -- but `os.path.exists` is used at line 172, so keep `import os`.
 
-def main():
-    cron_hour = int(os.environ.get("REFRESH_CRON_HOUR", "6"))
+### MLflow Removal: tests/models/test_logging.py -- Exact Surgery
 
-    scheduler.add_job(
-        run_pipeline,
-        CronTrigger(day_of_week="tue", hour=cron_hour, timezone="UTC"),
-        id="weekly_refresh",
-        max_instances=1,
-        replace_existing=True,
-    )
+**Changes needed (verified against current file):**
 
-    signal.signal(signal.SIGTERM, shutdown)
-    signal.signal(signal.SIGINT, shutdown)
+1. **Line 13:** `import mlflow` -- delete
+2. **Line 16:** `from models.train import log_experiment, setup_mlflow` -- change to `from models.train import log_experiment`
+3. **TestJsonlLogging class (lines 31-143):** Remove all `mlflow.set_tracking_uri(...)` and `mlflow.set_experiment(...)` calls from each test method. These were setup calls to prevent MLflow from polluting the project; after MLflow removal, they are unnecessary and will error.
+4. **TestMlflowLogging class (lines 147-244):** Delete the entire class. All 3 test methods (`test_mlflow_logging`, `test_dual_logging_consistency`, and the MLflow-specific assertions) are no longer valid.
 
-    logger.info("Worker started. Next refresh: Tuesday %02d:00 UTC", cron_hour)
-    scheduler.start()
+### MLflow Removal: pyproject.toml
 
-if __name__ == "__main__":
-    main()
-```
+**Line 17:** `"mlflow>=3.10.0",` -- delete this dependency. This reduces Docker image size significantly (mlflow pulls in many transitive dependencies).
 
-### Docker Compose Service Definitions (Structural Pattern)
+### docker-compose.yml Rewrite (Target State)
 ```yaml
 services:
   postgres:
@@ -409,7 +407,7 @@ services:
     environment:
       POSTGRES_DB: nflpredictor
       POSTGRES_USER: nfl
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nfldev}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./sql:/docker-entrypoint-initdb.d
@@ -423,12 +421,12 @@ services:
     build: .
     command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
-      DATABASE_URL: postgresql+psycopg://nfl:${POSTGRES_PASSWORD}@postgres:5432/nflpredictor
+      DATABASE_URL: postgresql+psycopg://nfl:${POSTGRES_PASSWORD:-nfldev}@postgres:5432/nflpredictor
       MODEL_PATH: /app/models-vol/best_model.json
       EXPERIMENTS_PATH: /app/models-vol/experiments.jsonl
-      RELOAD_TOKEN: ${RELOAD_TOKEN}
+      RELOAD_TOKEN: ${RELOAD_TOKEN:-devtoken}
     volumes:
-      - models:/app/models-vol:ro  # Read-only for API
+      - models:/app/models-vol:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -443,138 +441,153 @@ services:
     build: .
     command: ["python", "-m", "pipeline.worker"]
     environment:
-      DATABASE_URL: postgresql+psycopg://nfl:${POSTGRES_PASSWORD}@postgres:5432/nflpredictor
-      MLFLOW_TRACKING_URI: http://mlflow:5000
+      DATABASE_URL: postgresql+psycopg://nfl:${POSTGRES_PASSWORD:-nfldev}@postgres:5432/nflpredictor
       MODEL_PATH: /app/models-vol/best_model.json
       EXPERIMENTS_PATH: /app/models-vol/experiments.jsonl
       REFRESH_CRON_HOUR: ${REFRESH_CRON_HOUR:-6}
     volumes:
-      - models:/app/models-vol    # Read-write for worker
+      - models:/app/models-vol
     depends_on:
       postgres:
         condition: service_healthy
 
-  mlflow:
+  nginx:
     build:
       context: .
-      dockerfile: mlflow.Dockerfile
-    command: >
-      mlflow server
-      --host 0.0.0.0
-      --port 5000
-      --backend-store-uri postgresql://nfl:${POSTGRES_PASSWORD}@postgres:5432/mlflow
-      --default-artifact-root /mlartifacts
-    volumes:
-      - mlartifacts:/mlartifacts
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  caddy:
-    image: caddy:2-alpine
+      dockerfile: docker/nginx.Dockerfile
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./frontend/dist:/srv
-      - caddy_data:/data
+      - "8080:80"
     depends_on:
       api:
         condition: service_healthy
 
 volumes:
   pgdata:
-  mlartifacts:
   models:
-  caddy_data:
 ```
 
-### Caddyfile Pattern
+**Changes from current docker-compose.yml:**
+- REMOVED: `mlflow` service (entire block)
+- REMOVED: `caddy` service (entire block)
+- REMOVED: `mlartifacts` volume
+- REMOVED: `caddy_data` volume
+- REMOVED: `MLFLOW_TRACKING_URI` env var from `worker`
+- ADDED: `nginx` service (build from `docker/nginx.Dockerfile`, port `8080:80`, depends_on api healthy)
+
+### .dockerignore Updates
 ```
-{$DOMAIN:localhost} {
-    encode gzip
-
-    handle /api/* {
-        reverse_proxy api:8000
-    }
-
-    handle {
-        root * /srv
-        try_files {path} /index.html
-        file_server
-    }
-}
+.git
+.planning
+data/cache
+frontend/node_modules
+frontend/dist
+mlruns
+__pycache__
+*.pyc
+.env
+.claude
 ```
+**Changes from current:** Add `frontend/dist`, `.claude` (currently has `frontend/node_modules` already).
 
-### MLflow Custom Dockerfile
+### .env.example Update
+```
+# PostgreSQL (single source of truth for password)
+POSTGRES_PASSWORD=changeme_generate_strong_password
+
+# API model reload authorization token
+RELOAD_TOKEN=changeme_generate_random_token
+
+# Worker schedule (hour in UTC, default 6 = midnight Central)
+REFRESH_CRON_HOUR=6
+```
+**Changes from current:** Remove `DOMAIN=localhost` line (was for Caddy, no longer needed).
+
+### Docker Install on VPS (Ubuntu)
+```sh
+# Install Docker Engine via convenience script
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Add current user to docker group (avoid sudo for docker commands)
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Verify docker-compose-plugin is installed (included with convenience script)
+docker compose version
+# If not present:
+# sudo apt-get install -y docker-compose-plugin
+```
+Source: [Docker Engine Install - Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
+
+### Dockerfile Modifications (Entrypoint Addition)
 ```dockerfile
-FROM ghcr.io/mlflow/mlflow:latest
-RUN pip install --no-cache-dir psycopg2-binary
-```
+FROM python:3.11-slim AS builder
+WORKDIR /app
+COPY pyproject.toml ./
+RUN pip install --no-cache-dir --prefix=/install \
+    $(python -c "import tomllib; print(' '.join(tomllib.load(open('pyproject.toml','rb'))['project']['dependencies']))")
 
-### Staleness Check Pattern
-```python
-def _check_data_staleness(engine, season, expected_week):
-    """Verify Monday night's game results are in fetched data.
-
-    Queries schedules table for the most recent completed week.
-    If the latest completed week < expected_week, data hasn't updated yet.
-    """
-    query = """
-    SELECT MAX(week) as latest_week
-    FROM schedules
-    WHERE season = %(season)s
-      AND game_type = 'REG'
-      AND home_score IS NOT NULL
-    """
-    result = pd.read_sql(query, engine, params={"season": season})
-    latest = result["latest_week"].iloc[0]
-    if latest is None or int(latest) < expected_week:
-        raise ValueError(
-            f"Data stale: latest completed week is {latest}, "
-            f"expected at least week {expected_week}"
-        )
+FROM python:3.11-slim AS runtime
+WORKDIR /app
+COPY --from=builder /install /usr/local
+COPY . .
+# Volume seeding entrypoint
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
+**Changes from current Dockerfile:** Added 3 lines (COPY entrypoint.sh, RUN chmod, ENTRYPOINT). Note that the `COPY . .` already copies `docker/entrypoint.sh` into the image at `/app/docker/entrypoint.sh`, but we also copy it to `/entrypoint.sh` for a clean path.
+
+### Frontend API URL Configuration
+The frontend already uses relative URLs correctly:
+```typescript
+// frontend/src/lib/api.ts
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
+// Empty string = relative URLs like /api/predictions/current
+```
+No changes needed. The nginx container serves both the frontend and proxies `/api/` to FastAPI, making all requests same-origin.
 
 ## State of the Art
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| APScheduler 4.x alpha (async-first) | APScheduler 3.11.x (stable) | Ongoing | 4.x is alpha; 3.x is production-ready. Use 3.x for stability |
-| nginx + certbot for SSL | Caddy with auto-SSL | Caddy v2 (2020+) | Zero cert management, simpler config, fewer files |
-| MLflow file-based tracking | MLflow server with PostgreSQL | MLflow 2.x+ | Multi-process safe, queryable, proper production mode |
-| docker-compose (v1 Python) | docker compose (v2 built-in) | Docker Compose v2 (2022) | Built into Docker CLI, no separate install |
-| nfl-data-py | nflreadpy (recommended successor) | Sep 2025 | nfl-data-py archived; but project already uses it successfully and it still works |
+| Caddy auto-SSL in container | VPS system nginx + Certbot | This phase (CONTEXT.md update) | VPS already runs nginx for other sites; consistent proxy layer |
+| MLflow as tracking service | JSONL-only logging | This phase (CONTEXT.md update) | Simpler stack, fewer services, no psycopg2 issues |
+| Pre-built frontend/dist/ in git | Multi-stage Docker build | This phase (CONTEXT.md update) | Cleaner repo, reproducible builds |
+| 5 Docker services | 4 Docker services | This phase (CONTEXT.md update) | Reduced resource usage, simpler compose file |
+| docker-compose v1 (Python) | docker compose v2 (built-in) | Docker Compose v2 (2022) | Built into Docker CLI, no separate install |
 
 **Deprecated/outdated:**
-- APScheduler 4.0.0a3 exists but is alpha -- do NOT use. Stick with 3.11.x.
-- `docker-compose` (hyphenated, Python-based v1) is deprecated. Use `docker compose` (space, Go-based v2). The Compose file format is the same.
-- `nfl-data-py` was archived September 2025 but still functions. The project already uses it; no migration needed for v1.
+- `docker-compose` (hyphenated, Python v1) is deprecated. Use `docker compose` (space, Go v2). All commands in the VPS bootstrap use the v2 syntax.
+- MLflow as a service is being removed for this project. JSONL logging remains as the single experiment tracking mechanism.
+- Caddy is being removed. The existing `Caddyfile` and references to Caddy should be deleted.
 
 ## Open Questions
 
-1. **nfl-data-py Archive Status**
-   - What we know: nfl-data-py was archived Sept 2025; nflreadpy is the successor. The project already uses nfl-data-py successfully.
-   - What's unclear: Whether the underlying nflverse data endpoints remain stable. The library still works as of March 2026.
-   - Recommendation: Keep using nfl-data-py for v1. If it breaks during the 2026 season, migrate to nflreadpy. Not a deployment blocker.
+1. **CORS_ORIGINS for Production**
+   - What we know: `api/config.py` has CORS_ORIGINS hardcoded to localhost:3000 and localhost:5173. In production behind nginx, all requests are same-origin (relative URLs), so CORS is not needed.
+   - What's unclear: Whether to add the production domain to CORS_ORIGINS for potential direct API access.
+   - Recommendation: Leave as-is. Same-origin requests from the nginx-served frontend don't trigger CORS. If direct API access from other domains is needed in v2, add an env-var-based CORS_ORIGINS at that time.
 
-2. **MLflow Image Tag Pinning**
-   - What we know: `ghcr.io/mlflow/mlflow:latest` exists. The project pins `mlflow>=3.10.0` in pyproject.toml.
-   - What's unclear: Whether the Docker image tag numbering matches PyPI versions exactly.
-   - Recommendation: Use `ghcr.io/mlflow/mlflow:latest` in the custom Dockerfile. The tag is rebuilt regularly. Pin to a specific version tag if stability issues emerge.
+2. **package-lock.json Existence**
+   - What we know: `npm ci` requires `package-lock.json` to exist. The `frontend/package.json` exists.
+   - What's unclear: Whether `package-lock.json` is committed to git.
+   - Recommendation: Verify `package-lock.json` exists in `frontend/`. If not, generate it with `cd frontend && npm install` before the Docker build. This should be a Wave 0 check.
 
-3. **First-Run Data Volume Bootstrap**
-   - What we know: First run ingests 20 seasons (~14M+ PBP rows, 30+ minutes). This runs interactively via `docker compose exec worker python -m pipeline.refresh`.
-   - What's unclear: Whether the cache directory (`data/cache/`) should be a named volume or if data downloads happen fresh each time in Docker.
-   - Recommendation: Do NOT volume-mount `data/cache/`. Let each container build download fresh. The cache is a development convenience; in Docker, the database is the source of truth. Alternatively, use a bind mount for the cache during initial setup to speed up debugging, then remove it.
+3. **Worker Volume Seeding with Read-Only API Mount**
+   - What we know: API mounts the models volume as `:ro`. Worker mounts it as read-write. Both run the entrypoint.
+   - What's unclear: Whether Docker's `:ro` mount prevents the entrypoint `cp` from writing (it should, since `:ro` is enforced at mount time, not after container start).
+   - Recommendation: Only the worker can seed the volume. The API's entrypoint will fail the `cp` silently (due to `|| echo` guard). The API handles missing model files gracefully. This is the intended behavior.
 
 ## Validation Architecture
 
 ### Test Framework
 | Property | Value |
 |----------|-------|
-| Framework | pytest (already configured in pyproject.toml) |
+| Framework | pytest (configured in pyproject.toml) |
 | Config file | `pyproject.toml` [tool.pytest.ini_options] |
 | Quick run command | `pytest tests/ -x -q` |
 | Full suite command | `pytest tests/ features/tests/ -v` |
@@ -582,50 +595,53 @@ def _check_data_staleness(engine, season, expected_week):
 ### Phase Requirements to Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| PIPE-01 | Weekly refresh ingests data + recomputes features | unit | `pytest tests/test_pipeline.py::test_refresh_steps_1_2 -x` | No -- Wave 0 |
-| PIPE-01 | APScheduler CronTrigger configuration | unit | `pytest tests/test_pipeline.py::test_worker_schedule -x` | No -- Wave 0 |
-| PIPE-02 | Retrain stages candidate model, non-fatal failure | unit | `pytest tests/test_pipeline.py::test_retrain_nonfatal -x` | No -- Wave 0 |
-| PIPE-03 | Staged model not live until reload | integration | `pytest tests/api/test_model.py::test_reload_model -x` | Yes (existing) |
-| PIPE-04 | Docker Compose starts all services | smoke | `docker compose up -d && docker compose ps` | Manual verification |
+| PIPE-01 | Weekly refresh ingests data + recomputes features | unit | `pytest tests/test_pipeline.py::test_ingest_new_data_calls_loaders_and_upserts -x` | Yes (existing) |
+| PIPE-01 | APScheduler CronTrigger configuration | unit | `pytest tests/test_pipeline.py::test_worker_schedule_config -x` | Yes (existing) |
+| PIPE-02 | Retrain stages candidate model, non-fatal failure | unit | `pytest tests/test_pipeline.py::test_retrain_nonfatal_in_run_pipeline -x` | Yes (existing) |
+| PIPE-03 | Staged model not live until reload | integration | `pytest tests/api/test_model.py -x` | Yes (existing) |
+| PIPE-04 | Docker Compose starts all 4 services | smoke | `docker compose up -d && docker compose ps` | Manual verification |
 | PIPE-04 | Health checks pass for all services | smoke | `docker compose ps --format json` | Manual verification |
+| N/A | MLflow removal -- log_experiment still writes JSONL | unit | `pytest tests/models/test_logging.py -x` | Yes (needs update) |
+| N/A | MLflow removed from pipeline test | unit | `pytest tests/test_pipeline.py::test_mlflow_tracking_uri_override -x` | Yes (needs deletion or rewrite) |
 
 ### Sampling Rate
 - **Per task commit:** `pytest tests/ -x -q` (quick unit test pass)
 - **Per wave merge:** `pytest tests/ features/tests/ -v` (full suite)
-- **Phase gate:** Full suite green + manual `docker compose up -d` smoke test before `/gsd:verify-work`
+- **Phase gate:** Full suite green + `docker compose up -d` smoke test
 
 ### Wave 0 Gaps
-- [ ] `tests/test_pipeline.py` -- covers PIPE-01, PIPE-02 (pipeline step execution, failure modes, staleness check)
-- [ ] `pipeline/__init__.py` -- package init
-- [ ] `pipeline/refresh.py` -- pipeline orchestration module
-- [ ] `pipeline/worker.py` -- APScheduler entrypoint
+- [ ] `tests/models/test_logging.py` -- needs MLflow removal: delete `TestMlflowLogging` class, remove mlflow imports/setup from `TestJsonlLogging`
+- [ ] `tests/test_pipeline.py::test_mlflow_tracking_uri_override` -- needs deletion (tests MLflow URI override which no longer exists)
+- [ ] Verify `frontend/package-lock.json` exists (required for `npm ci` in Docker build)
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [APScheduler 3.x Documentation](https://apscheduler.readthedocs.io/en/3.x/userguide.html) - BlockingScheduler, CronTrigger, signal handling
-- [Docker Compose Documentation](https://docs.docker.com/compose/how-tos/startup-order/) - Health checks, depends_on, service_healthy
-- [Caddy Common Patterns](https://caddyserver.com/docs/caddyfile/patterns) - SPA + reverse proxy Caddyfile syntax
-- [Docker Hub Caddy](https://hub.docker.com/_/caddy) - Official Caddy image tags, version 2.11.x
-- [MLflow Docker Compose](https://github.com/mlflow/mlflow/tree/master/docker-compose) - Official MLflow Docker Compose example with PostgreSQL
-- [MLflow GitHub Issue #9513](https://github.com/mlflow/mlflow/issues/9513) - Confirms official image lacks psycopg2 for PostgreSQL
+- [Docker Engine Install - Ubuntu](https://docs.docker.com/engine/install/ubuntu/) - Convenience script and docker-compose-plugin installation
+- [Docker Compose Install](https://docs.docker.com/compose/install/linux/) - Compose plugin installation via apt
+- [Dockerfile Reference](https://docs.docker.com/reference/dockerfile/) - ENTRYPOINT/CMD interaction, exec form behavior
+- [Docker Volumes](https://docs.docker.com/engine/storage/volumes/) - Named volume behavior, first-boot initialization
+- [nginx Docker Hub](https://hub.docker.com/_/nginx) - Official nginx:alpine image, version 1.29.6
+- [node Docker Hub](https://hub.docker.com/_/node) - Official node:20-alpine image, version 20.20.1
+- Project codebase: `docker-compose.yml`, `Dockerfile`, `models/train.py`, `pipeline/refresh.py`, `pipeline/worker.py`, `api/main.py`, `api/config.py`, `frontend/package.json`, `frontend/src/lib/api.ts`, `tests/models/test_logging.py`, `tests/test_pipeline.py`
 
 ### Secondary (MEDIUM confidence)
-- [APScheduler Docker Graceful Shutdown](https://www.tooli.top/posts/apscheduler_docker_stop) - SIGTERM handler pattern verified against APScheduler docs
-- [Python Docker Images Best Practices](https://pythonspeed.com/articles/base-image-python-docker-images/) - python:3.11-slim recommendation for data science workloads
-- [Docker Multi-Stage Builds for Python](https://collabnix.com/docker-multi-stage-builds-for-python-developers-a-complete-guide/) - Build/runtime stage separation
-- [MLflow PostgreSQL Setup](https://medium.com/@mahernaija/deploy-mlflow-3-2-0-with-postgresql-minio-in-docker-2025-edition-58ebb434751d) - psycopg2-binary installation pattern
+- [Serve SPA with API via nginx reverse proxy](https://dev.to/___bn___/serve-a-single-page-application-along-with-its-backend-api-thanks-to-nginx-reverse-proxy-2h5c) - nginx SPA + API proxy pattern
+- [Containerizing SPA with Multi-Stage nginx Build](https://dev.to/it-wibrc/guide-to-containerizing-a-modern-javascript-spa-vuevitereact-with-a-multi-stage-nginx-build-1lma) - Multi-stage Dockerfile pattern for Vite/React
+- [DigitalOcean: Nginx Reverse Proxy on Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-configure-nginx-as-a-reverse-proxy-on-ubuntu-22-04) - VPS nginx reverse proxy + Certbot
+- [Docker Blog: How to Dockerize React App](https://www.docker.com/blog/how-to-dockerize-react-app/) - Official Docker guide for React containerization
 
 ### Tertiary (LOW confidence)
-- MLflow Docker image tag alignment with PyPI versions -- not formally documented, inferred from release patterns
+- None -- all findings verified against official docs or project source code
 
 ## Metadata
 
 **Confidence breakdown:**
-- Standard stack: HIGH - All components are mature, well-documented, and verified against official sources
-- Architecture: HIGH - Patterns directly from Docker Compose docs, Caddy docs, APScheduler docs; project already has all application code
-- Pitfalls: HIGH - Each pitfall verified against official documentation or confirmed via GitHub issues (e.g., MLflow psycopg2 gap)
-- Pipeline logic: HIGH - All four pipeline steps reuse existing, tested code (data/ingest.py, features/build.py, models/train.py, models/predict.py)
+- Standard stack: HIGH - All components are stable, well-documented; versions verified against Docker Hub
+- Architecture: HIGH - Patterns directly from nginx docs, Docker docs, and verified project code analysis
+- MLflow removal: HIGH - Exact line numbers verified against current source files; all affected files identified
+- Pitfalls: HIGH - Each pitfall verified by reading actual source code (e.g., CORS_ORIGINS, api.ts API_BASE, lifespan handler)
+- VPS deployment: MEDIUM - Standard Docker install + nginx patterns; VPS-specific details depend on actual server state
 
-**Research date:** 2026-03-17
-**Valid until:** 2026-04-17 (30 days -- all components are stable releases)
+**Research date:** 2026-03-22
+**Valid until:** 2026-04-22 (30 days -- all components are stable releases)
