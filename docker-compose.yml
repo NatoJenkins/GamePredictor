@@ -39,7 +39,6 @@ services:
     command: ["python", "-m", "pipeline.worker"]
     environment:
       DATABASE_URL: postgresql+psycopg://nfl:${POSTGRES_PASSWORD:-nfldev}@postgres:5432/nflpredictor
-      MLFLOW_TRACKING_URI: http://mlflow:5000
       MODEL_PATH: /app/models-vol/best_model.json
       EXPERIMENTS_PATH: /app/models-vol/experiments.jsonl
       REFRESH_CRON_HOUR: ${REFRESH_CRON_HOUR:-6}
@@ -49,40 +48,16 @@ services:
       postgres:
         condition: service_healthy
 
-  mlflow:
+  nginx:
     build:
       context: .
-      dockerfile: mlflow.Dockerfile
-    # NOTE: MLflow uses postgresql:// (psycopg2) not postgresql+psycopg:// (psycopg3).
-    # The API uses psycopg3 via SQLAlchemy; MLflow uses psycopg2 internally.
-    # This is why mlflow.Dockerfile installs psycopg2-binary separately.
-    command: >
-      mlflow server
-      --host 0.0.0.0
-      --port 5000
-      --backend-store-uri postgresql://nfl:${POSTGRES_PASSWORD:-nfldev}@postgres:5432/mlflow
-      --default-artifact-root /mlartifacts
-    volumes:
-      - mlartifacts:/mlartifacts
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  caddy:
-    image: caddy:2-alpine
+      dockerfile: docker/nginx.Dockerfile
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./frontend/dist:/srv
-      - caddy_data:/data
+      - "8080:80"
     depends_on:
       api:
         condition: service_healthy
 
 volumes:
   pgdata:
-  mlartifacts:
   models:
-  caddy_data:

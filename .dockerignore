@@ -2,7 +2,10 @@
 .planning
 data/cache
 frontend/node_modules
+frontend/dist
 mlruns
 __pycache__
 *.pyc
 .env
+*.md
+!frontend/README.md
