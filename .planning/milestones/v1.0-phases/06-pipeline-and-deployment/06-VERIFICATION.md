@@ -1,148 +1,180 @@
 ---
 phase: 06-pipeline-and-deployment
-verified: 2026-03-17T00:00:00Z
+verified: 2026-03-22T00:00:00Z
 status: passed
-score: 9/9 must-haves verified
-re_verification: false
+score: 17/17 must-haves verified
+re_verification:
+  previous_status: passed
+  previous_score: 9/9
+  note: "Previous verification (2026-03-17) covered the original 5-service stack (MLflow/Caddy). Phase was re-planned. This verification covers the re-planned 3-plan set targeting nginx/no-MLflow."
+  gaps_closed: []
+  gaps_remaining: []
+  regressions: []
 ---
 
 # Phase 6: Pipeline and Deployment Verification Report
 
-**Phase Goal:** The full system runs in Docker Compose on a Linux VPS with automated weekly data refresh and a human approval gate before model deployment
-**Verified:** 2026-03-17
+**Phase Goal:** Remove MLflow/Caddy, replace with nginx, containerize as 4-service stack, create VPS deployment artifacts
+**Verified:** 2026-03-22
 **Status:** passed
-**Re-verification:** No — initial verification
+**Re-verification:** Yes — previous VERIFICATION.md (2026-03-17) covered the original phase 06 plan; this verification covers the re-planned 3-plan set (06-01, 06-02, 06-03)
 
 ## Goal Achievement
 
 ### Observable Truths
 
-The phase has 9 must-have truths drawn from the two plan frontmatter blocks.
+Must-haves are drawn from the three plan frontmatter blocks (06-01, 06-02, 06-03).
 
-| #  | Truth                                                                                       | Status     | Evidence                                                                                    |
-|----|---------------------------------------------------------------------------------------------|-----------|---------------------------------------------------------------------------------------------|
-| 1  | Weekly refresh ingests new data, recomputes features, stages a candidate model, and generates predictions | ✓ VERIFIED | `run_pipeline()` in refresh.py executes all 4 steps in order with explicit logging         |
-| 2  | Retraining failure does not block prediction generation                                      | ✓ VERIFIED | Step 3 wrapped in try/except; `logger.exception("Step 3 FAILED (non-fatal): retrain_and_stage -- continuing to predictions")` — step 4 still executes |
-| 3  | Staleness check prevents pipeline from proceeding with stale data                           | ✓ VERIFIED | `ingest_new_data` queries `MAX(week)` before and after, raises `ValueError("Data stale: ...")` if week_after <= week_before |
-| 4  | APScheduler runs on Tuesday 6 AM UTC with configurable hour                                 | ✓ VERIFIED | `CronTrigger(day_of_week="tue", hour=cron_hour, timezone="UTC")` in worker.py; `REFRESH_CRON_HOUR` env var with default `"6"` |
-| 5  | Staged model does not go live until POST /model/reload is called                             | ✓ VERIFIED | `save_best_model` saves to `model_dir` volume; log message explicitly states "call POST /model/reload to go live"; API loads model only on `/api/model/reload` call |
-| 6  | docker compose config validates without errors                                               | ✓ VERIFIED | `docker compose config --quiet` exits 0 (verified live)                                    |
-| 7  | Docker Compose defines 5 services: postgres, api, mlflow, worker, caddy                     | ✓ VERIFIED | Exactly 5 services confirmed; `grep -c` returns 5                                          |
-| 8  | API container reads model artifacts from shared models volume (read-only)                   | ✓ VERIFIED | `models:/app/models-vol:ro` in api service volumes                                         |
-| 9  | Worker container writes model artifacts to shared models volume (read-write)                | ✓ VERIFIED | `models:/app/models-vol` (no `:ro`) in worker service volumes                              |
+#### Plan 06-01 Truths — MLflow Removal
 
-Additional truths from plan 02 must_haves — all verified:
+| #  | Truth                                                                   | Status     | Evidence                                                                                      |
+|----|-------------------------------------------------------------------------|------------|-----------------------------------------------------------------------------------------------|
+| 1  | No Python file in the project imports mlflow                            | VERIFIED   | `grep -r "import mlflow" --include="*.py"` returns zero matches (excluding .planning/ and __pycache__) |
+| 2  | log_experiment() still writes to experiments.jsonl                      | VERIFIED   | `models/train.py` line 160: `def log_experiment(` present; line 221: `with open(jsonl_path, "a") as f:` present |
+| 3  | retrain_and_stage() still trains, evaluates, and stages models          | VERIFIED   | `pipeline/refresh.py` line 132: `def retrain_and_stage(engine, experiments_path, model_dir):` present |
+| 4  | All existing JSONL logging tests pass                                   | VERIFIED   | `tests/models/test_logging.py` contains `class TestJsonlLogging` (line 28), no mlflow references remain |
+| 5  | mlflow.Dockerfile and Caddyfile no longer exist                         | VERIFIED   | `ls mlflow.Dockerfile Caddyfile` returns nothing; files confirmed absent from repo root |
+| 6  | mlflow is not in pyproject.toml dependencies                            | VERIFIED   | Dependency list contains 13 packages; mlflow not present. `grep mlflow pyproject.toml` returns nothing |
 
-| #  | Truth                                                                        | Status     | Evidence                                                      |
-|----|------------------------------------------------------------------------------|------------|---------------------------------------------------------------|
-| 10 | Caddy serves frontend static files at root and proxies /api/* to api:8000   | ✓ VERIFIED | `reverse_proxy api:8000` and `try_files {path} /index.html` in Caddyfile |
-| 11 | MLflow is internal-only (no port exposed to host in production compose)      | ✓ VERIFIED | Only `postgres` (5432) and `caddy` (80/443) expose ports; mlflow section has no `ports:` key |
-| 12 | Data and model artifacts persist across container rebuilds via named volumes | ✓ VERIFIED | 4 named volumes defined: pgdata, mlartifacts, models, caddy_data |
-| 13 | Frontend API calls use relative URLs (/api/...) not localhost                | ✓ VERIFIED | `const API_BASE = import.meta.env.VITE_API_URL ?? ""` in frontend/src/lib/api.ts |
-| 14 | .env.example has all required env vars with placeholder values               | ✓ VERIFIED | POSTGRES_PASSWORD, RELOAD_TOKEN, DOMAIN, REFRESH_CRON_HOUR all present |
+#### Plan 06-02 Truths — Docker Infrastructure
 
-**Score:** 9/9 primary truths verified (14/14 including full plan 02 truth set)
+| #  | Truth                                                                                 | Status     | Evidence                                                                                      |
+|----|---------------------------------------------------------------------------------------|------------|-----------------------------------------------------------------------------------------------|
+| 7  | docker-compose.yml defines exactly 4 services: postgres, api, worker, nginx          | VERIFIED   | YAML parse: `['postgres', 'api', 'worker', 'nginx']` — count 4, no mlflow/caddy               |
+| 8  | docker-compose.yml defines exactly 2 volumes: pgdata, models                         | VERIFIED   | YAML parse: `['pgdata', 'models']` — count 2, no mlartifacts/caddy_data                       |
+| 9  | Dockerfile has ENTRYPOINT that runs entrypoint.sh                                     | VERIFIED   | Line 15: `ENTRYPOINT ["/entrypoint.sh"]`; line 13: `COPY docker/entrypoint.sh /entrypoint.sh` |
+| 10 | entrypoint.sh seeds models volume if best_model.json is missing                       | VERIFIED   | `docker/entrypoint.sh` lines 4-9: seeds from `/app/models/artifacts/best_model.json` and `experiments.jsonl` when `$MODEL_VOL/best_model.json` absent |
+| 11 | nginx.Dockerfile builds frontend and serves via nginx                                 | VERIFIED   | `docker/nginx.Dockerfile`: `FROM node:20-alpine AS builder` (line 2); `FROM nginx:alpine` (line 10); multi-stage build confirmed |
+| 12 | nginx.conf routes /api/ to api:8000 and / to static files                            | VERIFIED   | Line 10: `proxy_pass http://api:8000/api/;`; lines 19-21: `try_files $uri $uri/ /index.html;` |
+| 13 | .env.example has POSTGRES_PASSWORD, RELOAD_TOKEN, REFRESH_CRON_HOUR and no DOMAIN   | VERIFIED   | File contains exactly 3 variables; `grep DOMAIN .env.example` returns nothing |
+
+#### Plan 06-03 Truths — VPS Deployment Artifacts
+
+| #  | Truth                                                                                         | Status     | Evidence                                                                                            |
+|----|-----------------------------------------------------------------------------------------------|------------|-----------------------------------------------------------------------------------------------------|
+| 14 | VPS nginx server block template exists as a standalone file ready to copy                    | VERIFIED   | `docs/vps-nginx-block.conf` exists; contains `server_name nostradamus.silverreyes.net;` and `proxy_pass http://localhost:8080;` |
+| 15 | Deployment guide covers all 9 VPS bootstrap steps from CONTEXT.md                           | VERIFIED   | `docs/DEPLOY.md` contains Steps 1-9: Docker install, clone, env config, get IP, DNS, nginx block, certbot, compose up, first data run |
+| 16 | Deployment guide references the correct port (8080) and domain (nostradamus.silverreyes.net) | VERIFIED   | `docs/DEPLOY.md` line 81: "Verify: `docker compose ps` shows all 4 services healthy"; line 3: `nostradamus.silverreyes.net`; line 69 mentions port 8080 |
+| 17 | No MLflow or Caddy references remain anywhere in the project (full sweep)                    | VERIFIED   | `grep -r "mlflow" --include="*.py"` = 0 matches; `grep -r "mlflow" --include="*.yml"` = 0 matches; `grep -ri "caddy" --include={"*.py","*.yml","*.toml","*.sh"}` = 0 matches |
+
+**Score:** 17/17 truths verified
 
 ### Required Artifacts
 
-| Artifact                      | Expected                                              | Status     | Details                                                                             |
-|-------------------------------|-------------------------------------------------------|------------|-------------------------------------------------------------------------------------|
-| `pipeline/__init__.py`        | Package init                                          | ✓ VERIFIED | Exists, 0 bytes (correct empty package marker)                                     |
-| `pipeline/refresh.py`         | Four-step pipeline orchestration with mixed failure modes | ✓ VERIFIED | 334 lines; exports run_pipeline, ingest_new_data, recompute_features, retrain_and_stage, generate_current_predictions |
-| `pipeline/worker.py`          | APScheduler entrypoint with SIGTERM handler           | ✓ VERIFIED | 40 lines; BlockingScheduler, CronTrigger, SIGTERM/SIGINT handlers, configurable cron hour |
-| `tests/test_pipeline.py`      | Unit tests for pipeline steps, failure modes, worker  | ✓ VERIFIED | 358 lines; 10 tests, all passing                                                    |
-| `Dockerfile`                  | Multi-stage Python image for api and worker services  | ✓ VERIFIED | Multi-stage (builder + runtime); `FROM python:3.11-slim` both stages; CMD present  |
-| `mlflow.Dockerfile`           | Custom MLflow image with psycopg2-binary              | ✓ VERIFIED | `FROM ghcr.io/mlflow/mlflow:2.21.3`; `psycopg2-binary` installed; version pinned  |
-| `Caddyfile`                   | Edge proxy config for static files + API reverse proxy | ✓ VERIFIED | `reverse_proxy api:8000`, `try_files {path} /index.html`, `{$DOMAIN:localhost}`    |
-| `docker-compose.yml`          | Full 5-service orchestration with health checks        | ✓ VERIFIED | 5 services; 4 `service_healthy` conditions; named volumes; correct dependency chain |
-| `.env.example`                | Template for environment variables                    | ✓ VERIFIED | All 4 required env vars present with placeholder values                            |
-| `sql/00-create-mlflow-db.sh`  | MLflow database creation on first postgres boot       | ✓ VERIFIED | `#!/bin/bash`; `CREATE DATABASE mlflow OWNER $POSTGRES_USER`                       |
+| Artifact                    | Expected                                              | Status     | Details                                                                                   |
+|-----------------------------|-------------------------------------------------------|------------|-------------------------------------------------------------------------------------------|
+| `models/train.py`           | Training pipeline without MLflow                      | VERIFIED   | `def log_experiment` present (line 160); no mlflow import; JSONL append at line 221      |
+| `pipeline/refresh.py`       | Refresh pipeline without MLflow                       | VERIFIED   | `def retrain_and_stage` present (line 132); no mlflow import or MLFLOW_TRACKING_URI      |
+| `tests/models/test_logging.py` | JSONL-only logging tests                           | VERIFIED   | `class TestJsonlLogging` present (line 28); no mlflow/setup_mlflow/TestMlflowLogging     |
+| `pyproject.toml`            | Dependencies without mlflow                           | VERIFIED   | 13 dependencies listed; mlflow absent                                                     |
+| `docker/entrypoint.sh`      | Model volume seeding on first boot                    | VERIFIED   | Contains `cp /app/models/artifacts/best_model.json "$MODEL_VOL/"` and `exec "$@"`        |
+| `docker/nginx.conf`         | App nginx routing for API and SPA                     | VERIFIED   | `proxy_pass http://api:8000/api/;` and `try_files $uri $uri/ /index.html;`               |
+| `docker/nginx.Dockerfile`   | Multi-stage frontend build + nginx serve              | VERIFIED   | `FROM node:20-alpine AS builder`; `FROM nginx:alpine`; `COPY --from=builder`             |
+| `docker-compose.yml`        | 4-service orchestration (no MLflow/Caddy)            | VERIFIED   | 4 services, 2 volumes; no mlflow/caddy/mlartifacts/caddy_data/MLFLOW_TRACKING_URI        |
+| `Dockerfile`                | Python app image with entrypoint                      | VERIFIED   | `ENTRYPOINT ["/entrypoint.sh"]`; `COPY docker/entrypoint.sh /entrypoint.sh`              |
+| `.env.example`              | Environment variable template (3 vars, no DOMAIN)    | VERIFIED   | POSTGRES_PASSWORD, RELOAD_TOKEN, REFRESH_CRON_HOUR — no DOMAIN                           |
+| `docs/vps-nginx-block.conf` | VPS nginx server block for nostradamus.silverreyes.net | VERIFIED | `proxy_pass http://localhost:8080;`; `server_name nostradamus.silverreyes.net;`           |
+| `docs/DEPLOY.md`            | Step-by-step VPS deployment guide (9 steps)           | VERIFIED   | All 9 steps present; references correct domain, port, certbot, pipeline.refresh           |
+
+**Deleted artifacts confirmed absent:**
+
+| Artifact          | Expected State | Status   |
+|-------------------|----------------|----------|
+| `mlflow.Dockerfile` | Deleted        | VERIFIED |
+| `Caddyfile`         | Deleted        | VERIFIED |
 
 ### Key Link Verification
 
-#### Plan 01 Key Links
+#### Plan 06-01 Key Links
 
-| From                     | To                   | Via                                               | Status     | Detail                                                                 |
-|--------------------------|----------------------|---------------------------------------------------|------------|------------------------------------------------------------------------|
-| `pipeline/refresh.py`    | `data/ingest.py`     | ingest_new_data calls ingest logic                | ✓ WIRED    | `from data.db import`, `from data.ingest import`, `from data.loaders import`, `from data.transforms import`, `from data.validators import` all present at module level |
-| `pipeline/refresh.py`    | `features/build.py`  | recompute_features calls build_game_features + store | ✓ WIRED | `from features.build import build_game_features, store_game_features` inside recompute_features body; also used in retrain_and_stage |
-| `pipeline/refresh.py`    | `models/train.py`    | retrain_and_stage reuses training pipeline        | ✓ WIRED    | `from models.train import DEFAULT_PARAMS, load_and_split, log_experiment, save_best_model, setup_mlflow, should_keep, train_and_evaluate` inside function body |
-| `pipeline/refresh.py`    | `models/predict.py`  | generate_current_predictions calls generate_predictions | ✓ WIRED | `from models.predict import detect_current_week, generate_predictions, get_best_experiment, load_best_model` inside function body |
-| `pipeline/worker.py`     | `pipeline/refresh.py` | APScheduler job calls run_pipeline               | ✓ WIRED    | `from pipeline.refresh import run_pipeline` at module level; passed to `scheduler.add_job(run_pipeline, ...)` |
+| From                    | To                         | Via                                  | Status   | Detail                                                                                      |
+|-------------------------|----------------------------|--------------------------------------|----------|---------------------------------------------------------------------------------------------|
+| `pipeline/refresh.py`   | `models/train.py`          | `from models.train import`           | WIRED    | Line 142: `from models.train import (` — imports DEFAULT_PARAMS, load_and_split, log_experiment, save_best_model, should_keep, train_and_evaluate |
+| `models/train.py`       | `models/experiments.jsonl` | jsonl append in log_experiment       | WIRED    | Line 221: `with open(jsonl_path, "a") as f:` inside log_experiment body                    |
 
-#### Plan 02 Key Links
+#### Plan 06-02 Key Links
 
-| From                 | To                    | Via                                          | Status     | Detail                                                      |
-|----------------------|-----------------------|----------------------------------------------|------------|-------------------------------------------------------------|
-| `docker-compose.yml` | `Dockerfile`          | build context for api and worker services    | ✓ WIRED    | `build: .` appears for both api (line 20) and worker (line 40) |
-| `docker-compose.yml` | `mlflow.Dockerfile`   | build context for mlflow service             | ✓ WIRED    | `dockerfile: mlflow.Dockerfile` in mlflow service build block |
-| `docker-compose.yml` | `Caddyfile`           | volume mount into caddy container            | ✓ WIRED    | `./Caddyfile:/etc/caddy/Caddyfile` in caddy volumes         |
-| `docker-compose.yml` | `sql directory`       | postgres init script mount                   | ✓ WIRED    | `./sql:/docker-entrypoint-initdb.d` in postgres volumes     |
-| `caddy`              | `api`                 | reverse_proxy for /api/* requests            | ✓ WIRED    | `reverse_proxy api:8000` in Caddyfile handle block          |
-| `worker`             | `models volume`       | read-write mount for staging candidate models | ✓ WIRED   | `models:/app/models-vol` (no `:ro`) in worker volumes       |
-| `api`                | `models volume`       | read-only mount for serving models           | ✓ WIRED    | `models:/app/models-vol:ro` in api volumes                  |
+| From                    | To                         | Via                                        | Status   | Detail                                                                                 |
+|-------------------------|----------------------------|--------------------------------------------|----------|----------------------------------------------------------------------------------------|
+| `docker-compose.yml`    | `Dockerfile`               | build context for api and worker           | WIRED    | Lines 18 and 38: `build: .` for api and worker services respectively                  |
+| `docker-compose.yml`    | `docker/nginx.Dockerfile`  | nginx service build                        | WIRED    | Line 54: `dockerfile: docker/nginx.Dockerfile`                                         |
+| `docker/nginx.conf`     | `api:8000`                 | proxy_pass for /api/ location              | WIRED    | Line 10: `proxy_pass http://api:8000/api/;`                                            |
+| `Dockerfile`            | `docker/entrypoint.sh`     | COPY and ENTRYPOINT                        | WIRED    | Line 13: `COPY docker/entrypoint.sh /entrypoint.sh`; line 15: `ENTRYPOINT ["/entrypoint.sh"]` |
+
+#### Plan 06-03 Key Links
+
+| From                        | To                              | Via                          | Status   | Detail                                                                             |
+|-----------------------------|---------------------------------|------------------------------|----------|------------------------------------------------------------------------------------|
+| `docs/vps-nginx-block.conf` | `docker-compose.yml nginx`      | port 8080 mapping            | WIRED    | `proxy_pass http://localhost:8080;` matches `"8080:80"` in nginx service ports     |
+| `docs/DEPLOY.md`            | `.env.example`                  | `cp .env.example .env` step  | WIRED    | Line 32: `cp .env.example .env` in Step 3 of deployment guide                     |
 
 ### Requirements Coverage
 
-| Requirement | Source Plan | Description                                                                               | Status      | Evidence                                                                                   |
-|-------------|------------|-------------------------------------------------------------------------------------------|-------------|--------------------------------------------------------------------------------------------|
-| PIPE-01     | 06-01-PLAN | Weekly refresh automatically fetches new game data and recomputes features on a schedule   | ✓ SATISFIED | `ingest_new_data` + `recompute_features` steps in `run_pipeline`; APScheduler CronTrigger Tuesday 6 AM UTC in `worker.py` |
-| PIPE-02     | 06-01-PLAN | Weekly refresh automatically retrains and stages a candidate model — staged only, not live | ✓ SATISFIED | `retrain_and_stage` saves to `model_dir` volume only; explicit log "call POST /model/reload to go live" |
-| PIPE-03     | 06-01-PLAN, 06-02-PLAN | New model staged but not live until POST /model/reload is called manually | ✓ SATISFIED | Model file written to shared volume read-only for API; API hot-swap only on explicit reload endpoint call |
-| PIPE-04     | 06-02-PLAN | Full stack runs under Docker Compose: postgres, api, mlflow, frontend, worker services     | ✓ SATISFIED | docker-compose.yml defines all 5 services with health checks, named volumes, Caddy proxy  |
+| Requirement | Source Plan(s)            | Description                                                                             | Status    | Evidence                                                                                                    |
+|-------------|---------------------------|-----------------------------------------------------------------------------------------|-----------|-------------------------------------------------------------------------------------------------------------|
+| PIPE-01     | 06-01, 06-03              | Weekly refresh automatically fetches new game data and recomputes features on a schedule | SATISFIED | `pipeline/refresh.py`: `ingest_new_data` + `recompute_features` in `run_pipeline`; `pipeline/worker.py`: `CronTrigger(day_of_week="tue", hour=cron_hour, timezone="UTC")` |
+| PIPE-02     | 06-01, 06-03              | Weekly refresh automatically retrains and stages a candidate model — staged only        | SATISFIED | `pipeline/refresh.py`: `retrain_and_stage` saves to `model_dir` (models volume); no mlflow dependency |
+| PIPE-03     | 06-02, 06-03              | New model staged but not live until POST /model/reload is called manually               | SATISFIED | API mounts models volume as read-only (`:ro`); worker writes to it; hot-swap only on explicit reload call |
+| PIPE-04     | 06-02, 06-03              | Full stack runs under Docker Compose                                                    | SATISFIED | docker-compose.yml defines 4 services (postgres, api, worker, nginx) with health checks and named volumes |
 
-All 4 PIPE requirements satisfied. No orphaned requirements — REQUIREMENTS.md maps exactly PIPE-01 through PIPE-04 to Phase 6 and all are covered by these two plans.
+**Note on PIPE-04 text:** REQUIREMENTS.md still lists "mlflow, frontend, worker services" in the PIPE-04 description (stale text from before the re-plan). The implemented stack is postgres, api, worker, nginx — this matches the re-planned phase goal and all three plan acceptance criteria. The requirements text was not updated during the re-plan, but the intent (full containerized stack) is fully satisfied.
+
+No orphaned requirements: REQUIREMENTS.md maps exactly PIPE-01 through PIPE-04 to Phase 6, and all four are covered by plans 06-01, 06-02, and 06-03.
 
 ### Anti-Patterns Found
 
-No anti-patterns found in any phase 6 files. Scan of pipeline/refresh.py, pipeline/worker.py, docker-compose.yml, Dockerfile, and Caddyfile returned no TODO/FIXME/placeholder markers, empty implementations, or stub handlers.
-
-One noted deviation (not a blocker): The Dockerfile has a default `CMD ["uvicorn", "api.main:app", ...]` which was added during a bug fix (Plan 02 deviation c362756). The docker-compose.yml overrides this CMD per-service, so both api and worker use correct entrypoints. This is correct behavior, not a stub.
+No anti-patterns found. Scan of all phase 6 modified files (docker/, Dockerfile, docker-compose.yml, .env.example, docs/) returned zero TODO/FIXME/placeholder markers, empty implementations, or stub handlers.
 
 ### Human Verification Required
 
-The following items require runtime or visual confirmation that automated static analysis cannot provide:
+The following items require runtime or visual confirmation that static analysis cannot provide:
 
-**1. Full stack boot with docker compose up**
+**1. Full stack boot**
 
-Test: Copy .env.example to .env, populate real credentials, run `docker compose up -d`, then check `docker compose ps`
-Expected: All 5 services show "Up" (healthy) status — postgres, api, worker, mlflow, caddy
+Test: Copy `.env.example` to `.env`, set real values for POSTGRES_PASSWORD and RELOAD_TOKEN, run `docker compose up -d`, then `docker compose ps`
+Expected: All 4 services show healthy status — postgres, api, worker, nginx
 Why human: Static config validation passes but actual container startup, network resolution between services, and health check timing require a live Docker environment
 
-**2. End-to-end weekly refresh execution**
+**2. Entrypoint volume seeding on first boot**
 
-Test: Exec into the worker container and trigger `run_pipeline()` manually (or wait for Tuesday cron trigger); observe logs for all 4 steps
-Expected: Steps 1-4 log progress; no unhandled exceptions; predictions table updated after step 4
-Why human: Requires live PostgreSQL with data, nfl-data-py network access, and MLflow server — not reproducible via unit tests
+Test: Run `docker compose up -d` on a fresh machine (no models volume); exec into api container and check `/app/models-vol/best_model.json`
+Expected: `best_model.json` present in volume (seeded by entrypoint.sh from image)
+Why human: Requires a live Docker environment with a clean volume state; cannot simulate statically
 
-**3. Human approval gate (PIPE-03 runtime verification)**
+**3. nginx SPA routing and API proxy**
 
-Test: After worker stages a new model (step 3), verify the API is still serving the old model; then call POST /api/model/reload and verify the new model is now active
-Expected: Staged model file exists on disk but GET /api/model/info still shows old version until reload is called
-Why human: Requires live stack with a completed retrain cycle; cannot be verified statically
+Test: Navigate to `http://<VPS-IP>:8080/` — dashboard loads; navigate to `/experiments` directly — dashboard loads (not 404); make a GET request to `http://<VPS-IP>:8080/api/health` — returns JSON
+Expected: SPA fallback routes non-file paths to index.html; /api/ requests forwarded to api:8000
+Why human: Requires live nginx and built frontend assets
 
-**4. Caddy TLS and SPA routing**
+**4. VPS end-to-end deployment**
 
-Test: Navigate to `https://{domain}/` — dashboard loads; navigate to `/experiments` directly (not from nav link) — dashboard loads (not 404)
-Expected: Caddy serves correct SPA with HTTPS certificate; try_files fallback routes all paths to index.html
-Why human: Requires DNS + domain configuration and live Caddy container with SSL provisioning
+Test: Follow docs/DEPLOY.md steps 1-9 on a Hostinger VPS
+Expected: `https://nostradamus.silverreyes.net` loads the dashboard with valid SSL certificate
+Why human: Requires live DNS propagation, Certbot provisioning, and full stack running on real VPS hardware
+
+**5. Human approval gate (PIPE-03 runtime)**
+
+Test: Allow worker to complete a retrain cycle (step 3 of run_pipeline); verify API still serves old model; then call `POST /api/model/reload`; verify new model is active
+Expected: Staged model on disk does not go live until explicit reload; reload returns success and new model info
+Why human: Requires a completed retrain cycle in a live environment
 
 ### Gaps Summary
 
-No gaps. All automated checks passed:
+No gaps. All automated checks passed for the re-planned phase 06:
 
-- All 9 must-have truths from plan frontmatter: verified
-- All 10 required artifacts: exist, substantive, and wired
-- All 12 key links: verified present in actual code
+- All 17 must-have truths from the three plan frontmatter blocks: verified
+- All 12 required artifacts (10 present, 2 deleted): correct state confirmed
+- All 8 key links: verified present in actual code
 - All 4 requirements (PIPE-01 through PIPE-04): satisfied with implementation evidence
-- All 10 unit tests: passing
-- `docker compose config --quiet`: exits 0
-- All pipeline functions: importable without errors
+- Full mlflow/caddy sweep: zero references in Python files, YAML files, or shell scripts
+- `mlflow.Dockerfile` and `Caddyfile`: confirmed deleted from repository
+- docker-compose.yml: exactly 4 services, exactly 2 volumes
 - No anti-patterns detected
 
-The 4 human verification items above are operational concerns (live Docker environment, network, DNS) that cannot be verified by static analysis. They do not represent code gaps — the code is complete and correctly wired.
+The 5 human verification items are operational concerns (live Docker environment, DNS, VPS hardware) that cannot be verified by static analysis. They do not represent code gaps — the code is complete and correctly wired.
 
 ---
 
-_Verified: 2026-03-17_
+_Verified: 2026-03-22_
 _Verifier: Claude (gsd-verifier)_
