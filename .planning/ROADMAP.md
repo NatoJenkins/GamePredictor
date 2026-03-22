@@ -29,7 +29,7 @@ Full details archived to `milestones/v1.0-ROADMAP.md`
 **Plans:** 3 plans
 
 Plans:
-- [ ] 06-01-PLAN.md -- MLflow removal from code, tests, and dependencies
+- [x] 06-01-PLAN.md -- MLflow removal from code, tests, and dependencies (completed 2026-03-22)
 - [ ] 06-02-PLAN.md -- Docker infrastructure (Dockerfile, compose, nginx, entrypoint)
 - [ ] 06-03-PLAN.md -- VPS deployment guide and full-project verification sweep
 
@@ -42,4 +42,4 @@ Plans:
 | 3. Model Training and Autoresearch | v1.0 | 3/3 | Complete | 2026-03-17 |
 | 4. Prediction API | v1.0 | 2/2 | Complete | 2026-03-17 |
 | 5. Dashboard | v1.0 | 2/2 | Complete | 2026-03-17 |
-| 6. Pipeline and Deployment | v1.0 | 0/3 | Re-planning | - |
+| 6. Pipeline and Deployment | v1.0 | 1/3 | In Progress | - |
