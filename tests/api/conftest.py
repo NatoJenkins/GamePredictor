@@ -90,6 +90,53 @@ SAMPLE_PREDICTIONS = pd.DataFrame(
 )
 
 
+SAMPLE_SPREAD_EXPERIMENT = {
+    "experiment_id": 1,
+    "timestamp": "2026-03-23T04:54:37.744622+00:00",
+    "model_type": "spread_regression",
+    "params": {"n_estimators": 300},
+    "features": ["home_rest", "away_rest", "div_game"],
+    "mae_2023": 10.6826,
+    "rmse_2023": 13.8711,
+    "derived_win_accuracy_2023": 0.6016,
+    "keep": True,
+    "hypothesis": "Baseline spread",
+    "prev_best_mae": None,
+    "model_path": "models/artifacts/best_spread_model.json",
+}
+
+SAMPLE_SPREAD_PREDICTIONS = pd.DataFrame(
+    [
+        {
+            "game_id": "2024_01_KC_BAL",
+            "season": 2024,
+            "week": 1,
+            "game_date": "2024-09-05",
+            "home_team": "BAL",
+            "away_team": "KC",
+            "predicted_spread": 3.5,
+            "predicted_winner": "BAL",
+            "actual_spread": None,
+            "actual_winner": None,
+            "correct": None,
+        },
+        {
+            "game_id": "2024_01_GB_PHI",
+            "season": 2024,
+            "week": 1,
+            "game_date": "2024-09-06",
+            "home_team": "PHI",
+            "away_team": "GB",
+            "predicted_spread": -2.1,
+            "predicted_winner": "GB",
+            "actual_spread": None,
+            "actual_winner": None,
+            "correct": None,
+        },
+    ]
+)
+
+
 @pytest.fixture
 def experiments_file(tmp_path):
     """Create a temporary experiments.jsonl file."""
@@ -105,6 +152,14 @@ def _mock_read_sql(query, engine, params=None):
     query_lower = query.lower().strip()
     if "max(season)" in query_lower:
         return pd.DataFrame({"max_season": [2024]})
+    elif "from spread_predictions" in query_lower:
+        df = SAMPLE_SPREAD_PREDICTIONS.copy()
+        if params:
+            if "season" in params:
+                df = df[df["season"] == params["season"]]
+            if "week" in params:
+                df = df[df["week"] == params["week"]]
+        return df
     elif "from predictions" in query_lower:
         # Filter sample predictions by params
         df = SAMPLE_PREDICTIONS.copy()
@@ -136,6 +191,19 @@ def mock_model():
 
 
 @pytest.fixture
+def mock_spread_model():
+    """Create a mock XGBRegressor."""
+    model = MagicMock()
+    model.get_booster.return_value.feature_names = [
+        "home_rest",
+        "away_rest",
+        "div_game",
+        "home_rolling_point_diff",
+    ]
+    return model
+
+
+@pytest.fixture
 def mock_settings(experiments_file):
     """Create mock settings pointing to temp experiments file."""
     ms = MagicMock()
@@ -144,12 +212,14 @@ def mock_settings(experiments_file):
     ms.EXPERIMENTS_PATH = experiments_file
     ms.CONFIDENCE_HIGH = 0.65
     ms.CONFIDENCE_MEDIUM = 0.55
+    ms.SPREAD_MODEL_PATH = "models/artifacts/best_spread_model.json"
+    ms.SPREAD_EXPERIMENTS_PATH = experiments_file
     ms.CORS_ORIGINS = ["http://localhost:3000"]
     return ms
 
 
 @pytest.fixture
-def client(mock_model, mock_settings):
+def client(mock_model, mock_spread_model, mock_settings):
     """FastAPI TestClient with mocked dependencies (no DB/model needed).
 
     Patches lifespan dependencies so TestClient runs without real DB/model,
@@ -162,14 +232,20 @@ def client(mock_model, mock_settings):
         patch("api.main.get_engine", return_value=mock_engine),
         patch("api.main.load_best_model", return_value=mock_model),
         patch("api.main.get_best_experiment", return_value=SAMPLE_EXPERIMENTS[0]),
+        patch("api.main.load_best_spread_model", return_value=mock_spread_model),
+        patch("api.main.get_best_spread_experiment", return_value=SAMPLE_SPREAD_EXPERIMENT),
         patch("api.main.settings", mock_settings),
         # Patch route-level dependencies
         patch("api.routes.predictions.pd.read_sql", side_effect=_mock_read_sql),
         patch("api.routes.predictions.detect_current_week", return_value=(2024, 5)),
+        patch("api.routes.spreads.pd.read_sql", side_effect=_mock_read_sql),
         patch("api.routes.model.load_best_model", return_value=mock_model),
         patch("api.routes.model.get_best_experiment", return_value=SAMPLE_EXPERIMENTS[0]),
         patch("api.routes.model.detect_current_week", return_value=(2024, 5)),
         patch("api.routes.model.generate_predictions", return_value=[{"game_id": "test"}]),
+        patch("api.routes.model.load_best_spread_model", return_value=mock_spread_model),
+        patch("api.routes.model.get_best_spread_experiment", return_value=SAMPLE_SPREAD_EXPERIMENT),
+        patch("api.routes.model.generate_spread_predictions", return_value=[{"game_id": "spread_test"}]),
         patch("api.routes.model.settings", mock_settings),
         patch("api.routes.experiments.settings", mock_settings),
     ):
@@ -180,7 +256,7 @@ def client(mock_model, mock_settings):
 
 
 @pytest.fixture
-def offseason_client(mock_model, mock_settings):
+def offseason_client(mock_model, mock_spread_model, mock_settings):
     """Client where detect_current_week returns None (offseason)."""
     mock_engine = MagicMock()
 
@@ -189,10 +265,42 @@ def offseason_client(mock_model, mock_settings):
         patch("api.main.get_engine", return_value=mock_engine),
         patch("api.main.load_best_model", return_value=mock_model),
         patch("api.main.get_best_experiment", return_value=SAMPLE_EXPERIMENTS[0]),
+        patch("api.main.load_best_spread_model", return_value=mock_spread_model),
+        patch("api.main.get_best_spread_experiment", return_value=SAMPLE_SPREAD_EXPERIMENT),
         patch("api.main.settings", mock_settings),
         # Patch route-level dependencies
         patch("api.routes.predictions.pd.read_sql", side_effect=_mock_read_sql),
         patch("api.routes.predictions.detect_current_week", return_value=None),
+        patch("api.routes.spreads.pd.read_sql", side_effect=_mock_read_sql),
+        patch("api.routes.model.settings", mock_settings),
+        patch("api.routes.experiments.settings", mock_settings),
+    ):
+        from api.main import app
+
+        with TestClient(app, raise_server_exceptions=False) as tc:
+            yield tc
+
+
+@pytest.fixture
+def no_spread_client(mock_model, mock_settings):
+    """Client where spread model is not available (graceful degradation)."""
+    mock_engine = MagicMock()
+
+    with (
+        patch("api.main.get_engine", return_value=mock_engine),
+        patch("api.main.load_best_model", return_value=mock_model),
+        patch("api.main.get_best_experiment", return_value=SAMPLE_EXPERIMENTS[0]),
+        patch("api.main.load_best_spread_model", side_effect=FileNotFoundError("not found")),
+        patch("api.main.get_best_spread_experiment", side_effect=FileNotFoundError("not found")),
+        patch("api.main.settings", mock_settings),
+        patch("api.routes.predictions.pd.read_sql", side_effect=_mock_read_sql),
+        patch("api.routes.predictions.detect_current_week", return_value=(2024, 5)),
+        patch("api.routes.model.load_best_model", return_value=mock_model),
+        patch("api.routes.model.get_best_experiment", return_value=SAMPLE_EXPERIMENTS[0]),
+        patch("api.routes.model.detect_current_week", return_value=(2024, 5)),
+        patch("api.routes.model.generate_predictions", return_value=[{"game_id": "test"}]),
+        patch("api.routes.model.load_best_spread_model", side_effect=FileNotFoundError("not found")),
+        patch("api.routes.model.get_best_spread_experiment", side_effect=FileNotFoundError("not found")),
         patch("api.routes.model.settings", mock_settings),
         patch("api.routes.experiments.settings", mock_settings),
     ):
