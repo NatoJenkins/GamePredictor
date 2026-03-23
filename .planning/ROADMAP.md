@@ -85,7 +85,10 @@ Plans:
   1. The weekly pipeline generates spread predictions (inference only) for the current week alongside classifier predictions
   2. A seed script populates historical spread predictions for the 2023 validation season so the dashboard has data on first deploy
   3. All v1.1 changes are live at nostradamus.silverreyes.net with spread predictions visible on the dashboard
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 10-01-PLAN.md -- Pipeline step 5: spread inference in weekly pipeline with TDD tests
+- [ ] 10-02-PLAN.md -- Seed script, Docker infrastructure, and deploy readiness verification
 
 ## Progress
 
@@ -102,4 +105,4 @@ Plans:
 | 7. Spread Model Training | v1.1 | 3/3 | Complete | 2026-03-23 |
 | 8. Database and API Integration | v1.1 | 2/2 | Complete | 2026-03-23 |
 | 9. Dashboard Integration | v1.1 | 3/3 | Complete | 2026-03-23 |
-| 10. Pipeline and Production Deployment | v1.1 | 0/? | Not started | - |
+| 10. Pipeline and Production Deployment | v1.1 | 0/2 | Not started | - |
