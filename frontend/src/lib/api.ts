@@ -3,6 +3,8 @@ import type {
   PredictionHistoryResponse,
   ModelInfoResponse,
   ExperimentResponse,
+  SpreadWeekResponse,
+  SpreadHistoryResponse,
 } from "@/lib/types";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -61,3 +63,20 @@ export const fetchModelInfo = (): Promise<ModelInfoResponse> =>
 
 export const fetchExperiments = (): Promise<ExperimentResponse[]> =>
   apiFetch<ExperimentResponse[]>("/api/experiments");
+
+export const fetchSpreadPredictions = (
+  season: number,
+  week: number,
+): Promise<SpreadWeekResponse> =>
+  apiFetch<SpreadWeekResponse>(
+    `/api/predictions/spreads/week/${season}/${week}`,
+  );
+
+export const fetchSpreadHistory = (
+  season?: number,
+): Promise<SpreadHistoryResponse> => {
+  const params = season != null ? `?season=${season}` : "";
+  return apiFetch<SpreadHistoryResponse>(
+    `/api/predictions/spreads/history${params}`,
+  );
+};

@@ -38,6 +38,7 @@ export interface ModelInfoResponse {
   hypothesis: string;
   baseline_always_home: number;
   baseline_better_record: number;
+  spread_model: SpreadModelInfo | null;
 }
 
 export interface ShapFeature {
@@ -62,4 +63,38 @@ export interface ExperimentResponse {
   hypothesis: string;
   prev_best_acc: number;
   model_path: string | null;
+}
+
+export interface SpreadPredictionResponse {
+  game_id: string;
+  season: number;
+  week: number;
+  game_date: string | null;
+  home_team: string;
+  away_team: string;
+  predicted_spread: number;
+  predicted_winner: string;
+  actual_spread: number | null;
+  actual_winner: string | null;
+  correct: boolean | null;
+}
+
+export interface SpreadWeekResponse {
+  season: number;
+  week: number;
+  status: string;
+  predictions: SpreadPredictionResponse[];
+}
+
+export interface SpreadModelInfo {
+  mae: number;
+  rmse: number;
+  derived_win_accuracy: number;
+  training_date: string;
+  experiment_id: number;
+}
+
+export interface SpreadHistoryResponse {
+  season: number;
+  predictions: SpreadPredictionResponse[];
 }
