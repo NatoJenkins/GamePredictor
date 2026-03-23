@@ -8,10 +8,16 @@ import {
 } from "@/components/ui/table";
 import { ConfidenceBadge } from "@/components/shared/ConfidenceBadge";
 import { ResultIndicator } from "@/components/shared/ResultIndicator";
-import type { PredictionResponse } from "@/lib/types";
+import type { PredictionResponse, SpreadPredictionResponse } from "@/lib/types";
 
 interface HistoryTableProps {
   predictions: PredictionResponse[];
+  spreadByGameId?: Record<string, SpreadPredictionResponse>;
+}
+
+function formatSpread(value: number): string {
+  const sign = value >= 0 ? "+" : "";
+  return `${sign}${value.toFixed(1)}`;
 }
 
 function formatDate(gameDate: string | null): string {
@@ -23,7 +29,7 @@ function formatDate(gameDate: string | null): string {
   });
 }
 
-export function HistoryTable({ predictions }: HistoryTableProps) {
+export function HistoryTable({ predictions, spreadByGameId }: HistoryTableProps) {
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -34,6 +40,7 @@ export function HistoryTable({ predictions }: HistoryTableProps) {
             <TableHead>Matchup</TableHead>
             <TableHead className="w-[100px]">Pick</TableHead>
             <TableHead className="w-[100px]">Confidence</TableHead>
+            {spreadByGameId && <TableHead className="w-[80px]">Spread</TableHead>}
             <TableHead className="w-20">Result</TableHead>
             <TableHead className="w-[100px]">Actual</TableHead>
           </TableRow>
@@ -56,6 +63,13 @@ export function HistoryTable({ predictions }: HistoryTableProps) {
                   <ConfidenceBadge tier={p.confidence_tier} />
                 </div>
               </TableCell>
+              {spreadByGameId && (
+                <TableCell className="text-sm text-muted-foreground">
+                  {spreadByGameId[p.game_id]
+                    ? formatSpread(spreadByGameId[p.game_id].predicted_spread)
+                    : "-"}
+                </TableCell>
+              )}
               <TableCell>
                 <ResultIndicator correct={p.correct} />
               </TableCell>

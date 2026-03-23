@@ -1,11 +1,13 @@
 import { useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router";
 import { usePredictionHistory } from "@/hooks/usePredictionHistory";
+import { useSpreadHistory } from "@/hooks/useSpreadHistory";
 import { HistoryFilters } from "@/components/history/HistoryFilters";
 import { HistoryTable } from "@/components/history/HistoryTable";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { ApiError } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { SpreadPredictionResponse } from "@/lib/types";
 
 export function HistoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -19,6 +21,17 @@ export function HistoryPage() {
     season,
     team
   );
+
+  const spreadHistoryQuery = useSpreadHistory(season);
+
+  const spreadByGameId = useMemo(() => {
+    if (!spreadHistoryQuery.data?.predictions) return undefined;
+    const map: Record<string, SpreadPredictionResponse> = {};
+    for (const sp of spreadHistoryQuery.data.predictions) {
+      map[sp.game_id] = sp;
+    }
+    return map;
+  }, [spreadHistoryQuery.data]);
 
   useEffect(() => {
     document.title = "History - NFL Predictor";
@@ -127,7 +140,7 @@ export function HistoryPage() {
         availableTeams={availableTeams}
       />
 
-      <HistoryTable predictions={data.predictions} />
+      <HistoryTable predictions={data.predictions} spreadByGameId={spreadByGameId} />
     </div>
   );
 }

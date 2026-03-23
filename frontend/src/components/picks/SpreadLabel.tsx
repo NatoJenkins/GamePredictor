@@ -1,6 +1,6 @@
 interface SpreadLabelProps {
-  predictedSpread?: number;
-  actualSpread?: number;
+  predictedSpread?: number | null;
+  actualSpread?: number | null;
 }
 
 function formatSpread(value: number): string {

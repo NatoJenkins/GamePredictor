@@ -1,13 +1,26 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router";
 import { useCurrentPredictions } from "@/hooks/useCurrentPredictions";
+import { useSpreadPredictions } from "@/hooks/useSpreadPredictions";
 import { PicksGrid } from "@/components/picks/PicksGrid";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { ApiError } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { SpreadPredictionResponse } from "@/lib/types";
 
 export function ThisWeekPage() {
   const { data, isLoading, isError, error, refetch } = useCurrentPredictions();
+
+  const spreadQuery = useSpreadPredictions(data?.season, data?.week);
+
+  const spreadByGameId = useMemo(() => {
+    if (!spreadQuery.data?.predictions) return undefined;
+    const map: Record<string, SpreadPredictionResponse> = {};
+    for (const sp of spreadQuery.data.predictions) {
+      map[sp.game_id] = sp;
+    }
+    return map;
+  }, [spreadQuery.data]);
 
   useEffect(() => {
     if (data) {
@@ -70,7 +83,7 @@ export function ThisWeekPage() {
       <p className="text-sm text-muted-foreground mb-8">
         {data.season} Season
       </p>
-      <PicksGrid predictions={data.predictions} />
+      <PicksGrid predictions={data.predictions} spreadByGameId={spreadByGameId} />
     </div>
   );
 }
