@@ -11,6 +11,8 @@ from unittest.mock import MagicMock, patch
 from models.predict import (
     get_best_experiment,
     load_best_model,
+    load_best_spread_model,
+    get_best_spread_experiment,
     _get_team_rolling_features,
 )
 
@@ -240,3 +242,141 @@ def test_model_path_normalization(experiments_file):
     # The sample JSONL has "models/artifacts\\model_exp001.json"
     assert "\\" not in result["model_path"]
     assert result["model_path"] == "models/artifacts/model_exp001.json"
+
+
+# ---- Spread Prediction Tests ----
+
+
+SAMPLE_SPREAD_EXPERIMENTS = [
+    {
+        "experiment_id": 1,
+        "timestamp": "2026-03-23T04:54:37.744622+00:00",
+        "model_type": "spread_regression",
+        "params": {"n_estimators": 300, "max_depth": 6, "learning_rate": 0.1},
+        "features": ["home_rest", "away_rest", "div_game"],
+        "mae_2023": 10.6826,
+        "rmse_2023": 13.8711,
+        "derived_win_accuracy_2023": 0.6016,
+        "keep": True,
+        "hypothesis": "Baseline spread",
+        "prev_best_mae": None,
+        "model_path": "models/artifacts\\spread_model_exp001.json",
+    },
+    {
+        "experiment_id": 2,
+        "timestamp": "2026-03-23T15:27:18.981854+00:00",
+        "model_type": "spread_regression",
+        "params": {"n_estimators": 300},
+        "features": ["home_rest", "away_rest"],
+        "mae_2023": 10.5836,
+        "rmse_2023": 13.7103,
+        "derived_win_accuracy_2023": 0.5820,
+        "keep": False,
+        "hypothesis": "Regularization test",
+        "prev_best_mae": 10.6826,
+        "model_path": None,
+    },
+]
+
+
+@pytest.fixture
+def spread_experiments_file(tmp_path):
+    """Create a temporary spread_experiments.jsonl file."""
+    path = tmp_path / "spread_experiments.jsonl"
+    with open(path, "w") as f:
+        for exp in SAMPLE_SPREAD_EXPERIMENTS:
+            f.write(json.dumps(exp) + "\n")
+    return str(path)
+
+
+def test_load_best_spread_model(tmp_path):
+    """Loads XGBoost spread model from JSON file and returns XGBRegressor."""
+    from xgboost import XGBRegressor
+
+    model = XGBRegressor(n_estimators=2, max_depth=2)
+    X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
+    y = np.array([1.5, -3.2, 0.7, 5.1])
+    model.fit(X, y)
+    model_path = str(tmp_path / "test_spread_model.json")
+    model.save_model(model_path)
+
+    loaded = load_best_spread_model(model_path)
+    assert isinstance(loaded, XGBRegressor)
+
+
+def test_load_best_spread_model_missing():
+    """Raises FileNotFoundError for nonexistent path."""
+    with pytest.raises(FileNotFoundError):
+        load_best_spread_model("nonexistent_path/spread_model.json")
+
+
+def test_get_best_spread_experiment(spread_experiments_file):
+    """Returns the keep=true entry (experiment_id=1) ignoring keep=false even with lower MAE."""
+    result = get_best_spread_experiment(spread_experiments_file)
+    assert result is not None
+    assert result["experiment_id"] == 1
+    assert result["mae_2023"] == pytest.approx(10.6826)
+
+
+def test_get_best_spread_experiment_lowest_mae(tmp_path):
+    """When multiple keep=true entries exist, returns the one with lowest mae_2023."""
+    entries = [
+        {
+            "experiment_id": 1,
+            "mae_2023": 10.6826,
+            "keep": True,
+            "model_path": "models/artifacts\\spread_model_exp001.json",
+        },
+        {
+            "experiment_id": 3,
+            "mae_2023": 9.5,
+            "keep": True,
+            "model_path": "models/artifacts\\spread_model_exp003.json",
+        },
+    ]
+    path = tmp_path / "spread_multi.jsonl"
+    with open(path, "w") as f:
+        for entry in entries:
+            f.write(json.dumps(entry) + "\n")
+
+    result = get_best_spread_experiment(str(path))
+    assert result is not None
+    assert result["experiment_id"] == 3
+    assert result["mae_2023"] == pytest.approx(9.5)
+
+
+def test_get_best_spread_experiment_no_file():
+    """Raises FileNotFoundError when JSONL file does not exist."""
+    with pytest.raises(FileNotFoundError):
+        get_best_spread_experiment("nonexistent_path/spread_experiments.jsonl")
+
+
+def test_get_best_spread_experiment_path_normalization(spread_experiments_file):
+    """Backslashes in model_path are replaced with forward slashes."""
+    result = get_best_spread_experiment(spread_experiments_file)
+    assert "\\" not in result["model_path"]
+    assert result["model_path"] == "models/artifacts/spread_model_exp001.json"
+
+
+def test_spread_winner_home():
+    """predicted_spread >= 0 -> predicted_winner = home_team."""
+    predicted_spread = 3.5
+    home_team, away_team = "KC", "BUF"
+    predicted_winner = home_team if predicted_spread >= 0 else away_team
+    assert predicted_winner == "KC"
+
+
+def test_spread_winner_away():
+    """predicted_spread < 0 -> predicted_winner = away_team."""
+    predicted_spread = -2.1
+    home_team, away_team = "KC", "BUF"
+    predicted_winner = home_team if predicted_spread >= 0 else away_team
+    assert predicted_winner == "BUF"
+
+
+def test_spread_winner_zero_tie():
+    """predicted_spread = 0.0 -> predicted_winner = home_team (home-team convention)."""
+    predicted_spread = 0.0
+    home_team, away_team = "KC", "BUF"
+    predicted_winner = home_team if predicted_spread >= 0 else away_team
+    assert predicted_winner == "KC"
