@@ -4,6 +4,19 @@
 
 An end-to-end NFL game outcome prediction system. Ingests 20 seasons of play-by-play data, engineers leakage-safe features, trains an XGBoost classifier that beats trivial baselines at 62.89% on the 2023 validation season. Predictions are served via FastAPI and displayed in a React dashboard with weekly picks, season accuracy tracking, experiment comparison, and prediction history. Automated weekly refresh pipeline with human approval gate, deployed via Docker Compose.
 
+## Current Milestone: v1.1 Point Spread Model
+
+**Goal:** Add an XGBoost regression model that predicts point spread (margin of victory) alongside the existing win/loss classifier, integrated across API, dashboard, and pipeline.
+
+**Target features:**
+- Point spread regression model (XGBRegressor, reg:squarederror) trained on same 17 features
+- New spread_predictions DB table and API endpoints for spread predictions
+- Dashboard integration showing spread + classifier predictions side-by-side
+- Weekly pipeline generates spread predictions using inference only (no auto-retrain)
+- Spread experiment logging (spread_experiments.jsonl, append-only)
+
+**Prototyping results (Spread Exp 1):** MAE 10.68, RMSE 13.87, derived win accuracy 60.16% on 2023 validation. Beats both naive baselines (always +2.5: MAE 11.02, always 0: MAE 11.26).
+
 ## Core Value
 
 Pre-game win/loss predictions with calibrated confidence scores that beat trivial baselines on the 2023 validation season.
@@ -21,13 +34,13 @@ Pre-game win/loss predictions with calibrated confidence scores that beat trivia
 
 ### Active
 
-- [ ] Probability calibration (Platt scaling or isotonic regression) on validation set
-- [ ] Advanced engineered features: CPOE, success rate, weighted rolling averages, opponent adjustments
-- [ ] QB consistency features (EPA standard deviation across games)
-- [ ] SHAP-based feature importance display per prediction in the dashboard
-- [ ] Calibration plot: predicted win probability vs actual win rate by bucket
-- [ ] Model performance over time chart (rolling accuracy by week)
-- [ ] Weekly recap view with correct/incorrect game highlights
+- [ ] Point spread regression model predicting margin of victory from home team perspective
+- [ ] spread_predictions table storing spread predictions alongside existing classifier predictions
+- [ ] API endpoint serving spread predictions per week with predicted spread and derived winner
+- [ ] Dashboard integration showing spread predictions on existing PickCards (side-by-side with classifier)
+- [ ] Spread model performance tracking (MAE, derived win accuracy vs classifier)
+- [ ] Weekly pipeline inference for spread predictions (no auto-retrain)
+- [ ] Spread experiment logging and tracking (spread_experiments.jsonl)
 
 ### Out of Scope
 
@@ -38,14 +51,17 @@ Pre-game win/loss predictions with calibrated confidence scores that beat trivia
 - User accounts / authentication -- single-user or open read access
 - Neural network models -- gradient boosting outperforms deep learning on ~5K structured rows
 - Betting advice framing -- predictions only, no wagering guidance
+- Over/under totals model -- deferred to v1.2, requires a separate third model
+- Spread model auto-retraining in pipeline -- v1.1 uses inference only, manual retrain via train_spread.py
 
 ## Context
 
 Shipped v1.0 with ~8,200 LOC (6,110 Python + 1,935 TypeScript + 146 SQL).
 Tech stack: Python 3.11, PostgreSQL, nflreadpy, pandas, XGBoost, FastAPI, React + Vite + Tailwind v4 + shadcn/ui, Docker Compose, MLflow, APScheduler.
 Data source: nflreadpy (was nfl-data-py, switched during Phase 1 for compatibility).
-Best model: Experiment 5 -- lower learning rate (0.1) + early stopping, 62.89% on 2023 validation.
+Best classifier: Experiment 5 -- lower learning rate (0.1) + early stopping, 62.89% on 2023 validation.
 Full 17-feature set proved near-optimal; all ablation experiments degraded accuracy.
+Spread model prototype: train_spread.py created, Spread Exp 1 baseline run (MAE 10.68, derived win accuracy 60.16%). Model artifact saved at models/artifacts/best_spread_model.json. SHAP top-5 features match classifier (rolling_point_diff, off_epa_per_play dominant).
 
 ## Constraints
 
@@ -72,5 +88,10 @@ Full 17-feature set proved near-optimal; all ablation experiments degraded accur
 | Caddy as edge proxy | Static file serving + API reverse proxy + automatic HTTPS | Good -- simple config, same-origin relative URLs |
 | Models volume read-only for API | Worker writes, API reads -- prevents API from corrupting model artifacts | Good -- clean separation of concerns |
 
+| XGBRegressor for point spreads | Same model family as classifier, same feature set, proven tabular performance | -- Pending |
+| Inference-only pipeline for spread model | Keeps pipeline simple, manual retrain via train_spread.py | -- Pending |
+| Integrated dashboard (not separate page) | Users see both predictions in context, avoids navigation overhead | -- Pending |
+| Over/under deferred to v1.2 | Separate model needed, keeps v1.1 scope focused | -- Pending |
+
 ---
-*Last updated: 2026-03-18 after v1.0 milestone*
+*Last updated: 2026-03-22 after v1.1 milestone start*

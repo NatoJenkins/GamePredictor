@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-current_phase: 06-pipeline-and-deployment (re-plan) -- COMPLETE
-current_plan: 3 of 3 -- ALL DONE
-status: unknown
-stopped_at: Completed 06-03-PLAN.md (VPS deployment guide). All v1.0 plans complete.
-last_updated: "2026-03-22T21:12:29.570Z"
+milestone: v1.1
+milestone_name: Point Spread Model
+current_phase: Not started (defining requirements)
+current_plan: —
+status: defining_requirements
+stopped_at: Milestone v1.1 started. PROJECT.md updated.
+last_updated: "2026-03-22"
 progress:
-  total_phases: 1
+  total_phases: 0
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,35 +18,24 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-18)
+See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** Pre-game win/loss predictions with calibrated confidence scores that beat trivial baselines on the 2023 validation season
-**Current focus:** v1.0 MVP complete. All phases and plans executed.
+**Current focus:** v1.1 Point Spread Model — adding spread regression alongside existing classifier
 
 ## Current Position
 
-Milestone: v1.0 MVP -- COMPLETE
-Current Phase: 06-pipeline-and-deployment (re-plan) -- COMPLETE
-Current Plan: 3 of 3 -- ALL DONE
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-22 — Milestone v1.1 started
 
 ## Performance Metrics
 
-**Velocity:**
+**Velocity (from v1.0):**
 - Total plans completed: 17
 - Average duration: 5.6min
 - Total execution time: 1.58 hours
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 01-data-foundation | 2 | 8min | 4min |
-| 02-feature-engineering | 3 | 10min | 3.3min |
-| 03-model-training-and-autoresearch | 3 | 21min | 7min |
-| 04-prediction-api | 2 | 11min | 5.5min |
-| 05-dashboard | 2 | 19min | 9.5min |
-| 06-pipeline-and-deployment | 2 | 19min | 9.5min |
-| 06-pipeline-and-deployment (re-plan) | 3 | 17min | 5.7min |
 
 ## Accumulated Context
 
@@ -54,10 +43,14 @@ Current Plan: 3 of 3 -- ALL DONE
 
 Full decision log in PROJECT.md Key Decisions table.
 
+**From v1.0:**
 - 06-01: Preserved log_experiment() with JSONL-only logging, removed MLflow side-effect entirely
 - 06-01: Removed setup_mlflow() function entirely rather than leaving as no-op
 - 06-02: Added .gitattributes for LF enforcement on shell scripts (prevents CRLF Docker breakage on Windows)
-- 06-03: No new decisions -- plan executed as specified
+
+**v1.1 prototyping:**
+- Spread training script (train_spread.py) mirrors classifier structure, loads target from parquet cache (no DB needed for training)
+- Spread Exp 1 baseline: MAE 10.68, RMSE 13.87, derived win accuracy 60.16% (vs classifier 62.89%)
 
 ### Pending Todos
 
@@ -65,10 +58,10 @@ None.
 
 ### Blockers/Concerns
 
-None -- all v1.0 research concerns resolved during execution.
+None.
 
 ## Session Continuity
 
 Last session: 2026-03-22
-Stopped at: Completed 06-03-PLAN.md (VPS deployment guide). All v1.0 plans complete.
+Stopped at: Milestone v1.1 started. Defining requirements.
 Resume file: N/A
