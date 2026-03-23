@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Point Spread Model
 status: in-progress
-stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-03-23T21:57:38.811Z"
-last_activity: 2026-03-23 -- Completed 09-01 spread data layer
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-03-23T22:03:43Z"
+last_activity: 2026-03-23 -- Completed 09-02 PickCard spread display
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 8
-  completed_plans: 6
-  percent: 75
+  completed_plans: 7
+  percent: 88
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-22)
 ## Current Position
 
 Phase: 9 of 10 (Dashboard Integration)
-Plan: 2 of 3 (Phase 9) -- next up
-Status: Completed 09-01, ready for 09-02
-Last activity: 2026-03-23 -- Completed 09-01 spread data layer (types, hooks, history endpoint)
+Plan: 3 of 3 (Phase 9) -- next up
+Status: Completed 09-02, ready for 09-03
+Last activity: 2026-03-23 -- Completed 09-02 PickCard spread display (SpreadLabel, wiring, HistoryTable)
 
-Progress: [██████░░░░] 75% (6/8 v1.1 plans complete)
+Progress: [████████░░] 88% (7/8 v1.1 plans complete)
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Progress: [██████░░░░] 75% (6/8 v1.1 plans complete)
 | 08 | 01 | 5min | 2 | 5 |
 | 08 | 02 | 11min | 2 | 7 |
 | 09 | 01 | 3min | 2 | 6 |
+| 09 | 02 | 3min | 2 | 6 |
 
 ## Accumulated Context
 
@@ -71,6 +72,9 @@ Full decision log in PROJECT.md Key Decisions table.
 - 08-02: Spread endpoint uses path params {season}/{week} matching URL hierarchy convention
 - 08-02: Spread reload generates predictions only when both current week and spread info available
 
+**v1.1 Phase 9:**
+- 09-02: SpreadLabel props accept null | undefined to match API type convention (actual_spread is null before game completes)
+
 **v1.1 Phase 7:**
 - 07-01: Used params.pop() to extract objective from hyperparams dict, enabling alternative loss functions
 - 07-01: Created spread_program.md with Exp 1 baselines and experiment queue (Exps 2-5)
@@ -90,6 +94,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-23T21:57:38.808Z
-Stopped at: Completed 09-01-PLAN.md
+Last session: 2026-03-23T22:03:43Z
+Stopped at: Completed 09-02-PLAN.md
 Resume file: None
