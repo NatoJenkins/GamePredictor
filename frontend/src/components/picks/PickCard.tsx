@@ -1,7 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfidenceBadge } from "@/components/shared/ConfidenceBadge";
 import { ResultIndicator } from "@/components/shared/ResultIndicator";
-import type { PredictionResponse } from "@/lib/types";
+import { SpreadLabel } from "@/components/picks/SpreadLabel";
+import type { PredictionResponse, SpreadPredictionResponse } from "@/lib/types";
 
 const tierBorderColors: Record<string, string> = {
   high: "border-blue-500",
@@ -11,9 +12,10 @@ const tierBorderColors: Record<string, string> = {
 
 interface PickCardProps {
   prediction: PredictionResponse;
+  spread?: SpreadPredictionResponse;
 }
 
-export function PickCard({ prediction }: PickCardProps) {
+export function PickCard({ prediction, spread }: PickCardProps) {
   const {
     away_team,
     home_team,
@@ -53,6 +55,11 @@ export function PickCard({ prediction }: PickCardProps) {
         </p>
 
         <ConfidenceBadge tier={confidence_tier} />
+
+        <SpreadLabel
+          predictedSpread={spread?.predicted_spread}
+          actualSpread={spread?.actual_spread}
+        />
       </CardContent>
     </Card>
   );
