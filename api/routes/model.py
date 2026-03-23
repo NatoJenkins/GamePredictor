@@ -4,12 +4,15 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 
 from api.config import settings, get_confidence_tier
 from api.deps import get_app_state
-from api.schemas import ModelInfoResponse, ReloadResponse
+from api.schemas import ModelInfoResponse, ReloadResponse, SpreadModelInfo
 from models.predict import (
     load_best_model,
     get_best_experiment,
     detect_current_week,
     generate_predictions,
+    load_best_spread_model,
+    get_best_spread_experiment,
+    generate_spread_predictions,
 )
 
 router = APIRouter()
@@ -27,6 +30,18 @@ async def model_info(state: dict = Depends(get_app_state)):
     if info is None:
         raise HTTPException(status_code=503, detail="No model loaded")
 
+    # Build spread model info if available
+    spread_info = state.get("spread_model_info")
+    spread_model_data = None
+    if spread_info is not None:
+        spread_model_data = SpreadModelInfo(
+            mae=spread_info["mae_2023"],
+            rmse=spread_info["rmse_2023"],
+            derived_win_accuracy=spread_info["derived_win_accuracy_2023"],
+            training_date=spread_info["timestamp"],
+            experiment_id=spread_info["experiment_id"],
+        )
+
     return ModelInfoResponse(
         experiment_id=info["experiment_id"],
         training_date=info["timestamp"],
@@ -35,6 +50,7 @@ async def model_info(state: dict = Depends(get_app_state)):
         hypothesis=info["hypothesis"],
         baseline_always_home=info["baseline_always_home"],
         baseline_better_record=info["baseline_better_record"],
+        spread_model=spread_model_data,
     )
 
 
@@ -95,9 +111,40 @@ async def reload_model(
     state["model"] = new_model
     state["model_info"] = new_info
 
+    # Reload spread model (graceful -- continues if missing)
+    spread_experiment_id = None
+    spread_mae = None
+    spread_preds_count = 0
+    try:
+        new_spread_model = load_best_spread_model(settings.SPREAD_MODEL_PATH)
+        new_spread_info = get_best_spread_experiment(settings.SPREAD_EXPERIMENTS_PATH)
+        state["spread_model"] = new_spread_model
+        state["spread_model_info"] = new_spread_info
+
+        # Generate spread predictions for current week if available
+        if current is not None and new_spread_info is not None:
+            spread_preds = generate_spread_predictions(
+                new_spread_model,
+                current_season,
+                current_week,
+                engine,
+                model_id=new_spread_info["experiment_id"],
+            )
+            spread_preds_count = len(spread_preds)
+
+        if new_spread_info is not None:
+            spread_experiment_id = new_spread_info["experiment_id"]
+            spread_mae = new_spread_info["mae_2023"]
+    except FileNotFoundError:
+        state["spread_model"] = None
+        state["spread_model_info"] = None
+
     return ReloadResponse(
         status="reloaded",
         experiment_id=new_info["experiment_id"],
         val_accuracy_2023=new_info["val_accuracy_2023"],
         predictions_generated=predictions_count,
+        spread_experiment_id=spread_experiment_id,
+        spread_mae=spread_mae,
+        spread_predictions_generated=spread_preds_count,
     )

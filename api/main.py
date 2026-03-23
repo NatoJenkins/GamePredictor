@@ -7,8 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.config import settings
 from api.deps import app_state
-from api.routes import predictions, model, experiments, health
-from models.predict import load_best_model, get_best_experiment
+from api.routes import predictions, model, experiments, health, spreads
+from models.predict import load_best_model, get_best_experiment, load_best_spread_model, get_best_spread_experiment
 from data.db import get_engine
 
 
@@ -25,6 +25,15 @@ async def lifespan(app: FastAPI):
         app_state["model_info"] = get_best_experiment(settings.EXPERIMENTS_PATH)
     except FileNotFoundError:
         app_state["model_info"] = None
+    # Spread model (graceful degradation -- API continues if missing)
+    try:
+        app_state["spread_model"] = load_best_spread_model(settings.SPREAD_MODEL_PATH)
+    except FileNotFoundError:
+        app_state["spread_model"] = None
+    try:
+        app_state["spread_model_info"] = get_best_spread_experiment(settings.SPREAD_EXPERIMENTS_PATH)
+    except FileNotFoundError:
+        app_state["spread_model_info"] = None
     yield
     # Shutdown
     app_state.clear()
@@ -50,3 +59,4 @@ app.include_router(predictions.router)
 app.include_router(model.router)
 app.include_router(experiments.router)
 app.include_router(health.router)
+app.include_router(spreads.router)
