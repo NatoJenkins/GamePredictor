@@ -66,30 +66,30 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DSGN-01 | TBD | Pending |
-| DSGN-02 | TBD | Pending |
-| DSGN-03 | TBD | Pending |
-| DSGN-04 | TBD | Pending |
-| LAND-01 | TBD | Pending |
-| LAND-02 | TBD | Pending |
-| LAND-03 | TBD | Pending |
-| LAND-04 | TBD | Pending |
-| LAND-05 | TBD | Pending |
-| LAND-06 | TBD | Pending |
-| LAND-07 | TBD | Pending |
-| NAV-01 | TBD | Pending |
-| NAV-02 | TBD | Pending |
-| NAV-03 | TBD | Pending |
-| EXPR-01 | TBD | Pending |
-| EXPR-02 | TBD | Pending |
-| EXPR-03 | TBD | Pending |
-| EXPR-04 | TBD | Pending |
+| DSGN-01 | Phase 11 | Pending |
+| DSGN-02 | Phase 11 | Pending |
+| DSGN-03 | Phase 11 | Pending |
+| DSGN-04 | Phase 11 | Pending |
+| NAV-01 | Phase 12 | Pending |
+| NAV-02 | Phase 12 | Pending |
+| NAV-03 | Phase 12 | Pending |
+| LAND-01 | Phase 13 | Pending |
+| LAND-02 | Phase 13 | Pending |
+| LAND-03 | Phase 13 | Pending |
+| LAND-04 | Phase 13 | Pending |
+| LAND-05 | Phase 13 | Pending |
+| LAND-06 | Phase 13 | Pending |
+| LAND-07 | Phase 13 | Pending |
+| EXPR-01 | Phase 14 | Pending |
+| EXPR-02 | Phase 14 | Pending |
+| EXPR-03 | Phase 14 | Pending |
+| EXPR-04 | Phase 14 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 18 total
-- Mapped to phases: 0
-- Unmapped: 18 (pending roadmap creation)
+- Mapped to phases: 18
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-24*
-*Last updated: 2026-03-24 after initial definition*
+*Last updated: 2026-03-24 after roadmap creation*
