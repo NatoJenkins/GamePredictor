@@ -1,5 +1,5 @@
 import { NavLink } from "react-router";
-import { Calendar, BarChart3, FlaskConical, History } from "lucide-react";
+import { Home, Calendar, BarChart3, FlaskConical, History } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,7 +7,8 @@ import { useModelInfo } from "@/hooks/useModelInfo";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { to: "/", icon: Calendar, label: "This Week" },
+  { to: "/", icon: Home, label: "Home" },
+  { to: "/this-week", icon: Calendar, label: "This Week" },
   { to: "/accuracy", icon: BarChart3, label: "Accuracy" },
   { to: "/experiments", icon: FlaskConical, label: "Experiments" },
   { to: "/history", icon: History, label: "History" },
@@ -54,7 +55,7 @@ export function Sidebar() {
         <div>
           <div className="p-6">
             <span className="text-sm font-normal text-foreground">
-              NFL Predictor
+              Nostradamus
             </span>
           </div>
           <nav className="flex flex-col gap-1 px-3">
@@ -84,7 +85,7 @@ export function Sidebar() {
       {/* Mobile top nav */}
       <nav className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center gap-4 border-b border-border bg-card px-4 md:hidden">
         <span className="mr-2 text-sm font-normal text-foreground">
-          NFL Predictor
+          Nostradamus
         </span>
         {navItems.map((item) => (
           <NavLink
