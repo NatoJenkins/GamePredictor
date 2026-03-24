@@ -48,12 +48,12 @@ export function SummaryCards({
             <InfoTooltip text="The Pick-Em model's win/loss prediction record for this season. It picks a straight-up winner for every game based on team stats, rest days, and recent performance." />
           </p>
           <p className="text-[28px] font-semibold leading-tight">
-            {summary.correct}/{summary.total}
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
             {summary.accuracy !== null
               ? (summary.accuracy * 100).toFixed(1) + "%"
               : "N/A"}
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {summary.correct}/{summary.total}
           </p>
         </CardContent>
       </Card>
