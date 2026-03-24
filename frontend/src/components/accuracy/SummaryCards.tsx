@@ -44,8 +44,8 @@ export function SummaryCards({
       <Card className="flex-1">
         <CardContent className="p-4">
           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
-            Model
-            <InfoTooltip text="The model's win/loss prediction record for this season. It picks a winner for every game based on team stats, rest days, and recent performance." />
+            Pick-Em Model
+            <InfoTooltip text="The Pick-Em model's win/loss prediction record for this season. It picks a straight-up winner for every game based on team stats, rest days, and recent performance." />
           </p>
           <p className="text-[28px] font-semibold leading-tight">
             {summary.correct}/{summary.total}

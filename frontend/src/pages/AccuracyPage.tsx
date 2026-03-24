@@ -103,6 +103,26 @@ export function AccuracyPage() {
     );
   }, [historyQuery.data, spreadHistoryQuery.data]);
 
+  // Compute season-filtered spread stats instead of using lifetime model info
+  const seasonSpreadStats = useMemo(() => {
+    if (!spreadHistoryQuery.data?.predictions) return null;
+    const completed = spreadHistoryQuery.data.predictions.filter(
+      (p) => p.actual_spread != null && p.correct != null,
+    );
+    if (completed.length === 0) return null;
+
+    const totalError = completed.reduce(
+      (sum, p) => sum + Math.abs(p.predicted_spread - p.actual_spread!),
+      0,
+    );
+    const correctCount = completed.filter((p) => p.correct).length;
+
+    return {
+      mae: totalError / completed.length,
+      derived_win_accuracy: correctCount / completed.length,
+    };
+  }, [spreadHistoryQuery.data]);
+
   if (historyQuery.isLoading || modelQuery.isLoading) {
     return (
       <div>
@@ -234,7 +254,9 @@ export function AccuracyPage() {
             </div>
           ) : (
             <SpreadSummaryCards
-              spreadModel={modelQuery.data.spread_model}
+              seasonStats={seasonSpreadStats}
+              lifetimeStats={modelQuery.data.spread_model}
+              displaySeason={displaySeason}
               classifierAccuracy={historyQuery.data.summary.accuracy}
               agreement={
                 agreement ?? {
