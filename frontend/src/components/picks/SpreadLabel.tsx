@@ -20,14 +20,15 @@ export function SpreadLabel({ predictedSpread, actualSpread }: SpreadLabelProps)
   const error =
     actualSpread != null ? Math.abs(predictedSpread - actualSpread) : null;
 
+  // Negate for sportsbook convention: negative = favorite, positive = underdog
   return (
     <div className="flex flex-col gap-0.5">
       <p className="text-sm text-muted-foreground">
-        {formatSpread(predictedSpread)} spread
+        {formatSpread(-predictedSpread)} spread
       </p>
       {actualSpread != null && error != null && (
         <p className="text-xs text-muted-foreground">
-          Actual {formatSpread(actualSpread)}{" "}
+          Actual {formatSpread(-actualSpread)}{" "}
           <span className={`font-semibold ${getSpreadErrorColor(error)}`}>
             (off by {error.toFixed(1)})
           </span>

@@ -27,16 +27,21 @@ export function HistoryLegend() {
           </div>
           <div>
             <span className="font-semibold text-foreground">Spread</span> —
-            Predicted point margin from the home team's perspective. For example,{" "}
-            <span className="text-foreground">MIA +2.3</span> means the model
-            predicts Miami (home) wins by 2.3 points.{" "}
-            <span className="text-foreground">MIA -2.0</span> means Miami (home)
-            loses by 2 points.
+            The model's predicted point spread for the home team, using standard
+            sportsbook convention.{" "}
+            <span className="text-foreground">MIA -2.3</span> means Miami is
+            favored by 2.3 points (giving 2.3).{" "}
+            <span className="text-foreground">MIA +2.0</span> means Miami is a
+            2-point underdog (getting 2). After the game, the actual result is
+            shown below (e.g., "BUF by 9").
           </div>
           <div className="pl-4 space-y-1">
             <div>
-              <span className="text-green-400 font-semibold">Green</span> — Spread
-              prediction was within 3 points of the actual margin.
+              The color shows how accurate the spread prediction was:
+            </div>
+            <div>
+              <span className="text-green-400 font-semibold">Green</span> — Within
+              3 points of the actual margin (field goal or less).
             </div>
             <div>
               <span className="text-amber-400 font-semibold">Amber</span> — Off by
@@ -44,7 +49,7 @@ export function HistoryLegend() {
             </div>
             <div>
               <span className="text-red-400 font-semibold">Red</span> — Off by more
-              than 7 points.
+              than 7 points (touchdown+).
             </div>
           </div>
           <div>

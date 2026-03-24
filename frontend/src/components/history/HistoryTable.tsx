@@ -27,7 +27,8 @@ function getSpreadErrorColor(error: number): string {
 }
 
 function SpreadCell({ spread }: { spread: SpreadPredictionResponse }) {
-  const predicted = `${spread.home_team} ${formatSpread(spread.predicted_spread)}`;
+  // Negate for sportsbook convention: negative = favorite, positive = underdog
+  const predicted = `${spread.home_team} ${formatSpread(-spread.predicted_spread)}`;
 
   if (spread.actual_spread == null || spread.actual_winner == null) {
     return <span>{predicted}</span>;
