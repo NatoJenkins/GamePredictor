@@ -91,7 +91,7 @@ export function SpreadSummaryCards({
             {spreadModel.mae.toFixed(2)}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            avg. points off per game
+            avg. spread prediction error
           </p>
         </CardContent>
       </Card>
