@@ -66,7 +66,7 @@ Inherited from Phase 11. No new type roles introduced.
 | Body | IBM Plex Mono | 14px | 400 (regular) | 1.5 | N/A -- no new body text elements |
 | Label | IBM Plex Mono | 12px | 400 (regular) | 1.4 | Nav item labels ("Home", "This Week"), sidebar branding text |
 | Heading | Syne | 20px | 700 (bold) | 1.2 | N/A -- no new headings in this phase |
-| Display | Syne | 28px | 700 (bold) | 1.1 | N/A -- reserved for Phase 13 hero |
+| Display | Syne | 28px | 700 (bold) | 1.1 | Placeholder heading "NFL Nostradamus" (temporary -- replaced by Phase 13 hero) |
 
 ### Phase 12 Specific Typography
 
@@ -75,7 +75,7 @@ Inherited from Phase 11. No new type roles introduced.
 | Sidebar branding "Nostradamus" | IBM Plex Mono | 14px | 400 | `text-sm font-normal text-foreground` | Matches existing "NFL Predictor" styling exactly |
 | Nav item labels (desktop) | IBM Plex Mono | 12px | 400 | `text-xs` | Existing pattern, no change |
 | Nav item labels (mobile) | IBM Plex Mono | 12px | 400 | `text-xs` | Existing pattern, no change |
-| Placeholder heading "NFL Nostradamus" | Syne | 36px | 700 | `font-display text-4xl` | Temporary -- replaced by Phase 13 hero |
+| Placeholder heading "NFL Nostradamus" | Syne | 28px | 700 | `font-display text-[1.75rem] font-bold` | Display role. Temporary -- replaced by Phase 13 hero |
 | Placeholder subtext | IBM Plex Mono | 14px | 400 | `text-muted-foreground` | "Landing page coming soon." in muted tone |
 | Placeholder CTA label | IBM Plex Mono | 14px | 400 | `text-sm text-primary-foreground` | Button inherits font from body |
 
@@ -173,7 +173,7 @@ The placeholder page at `/` is a temporary bridge between Phase 12 (route setup)
 
 | Element | Behavior |
 |---------|----------|
-| "NFL Nostradamus" heading | Static text, centered, Syne display font |
+| "NFL Nostradamus" heading | Static text, centered, Syne display font at 28px (Display role) |
 | "Landing page coming soon." | Static text, centered, muted foreground |
 | "Go to Dashboard" button | Navigates to `/this-week` via React Router `<Link>`. Uses `bg-primary` amber fill. Hover state: `bg-primary/90`. |
 
