@@ -21,6 +21,8 @@ services:
       DATABASE_URL: postgresql+psycopg://nfl:${POSTGRES_PASSWORD:-nfldev}@postgres:5432/nflpredictor
       MODEL_PATH: /app/models-vol/best_model.json
       EXPERIMENTS_PATH: /app/models-vol/experiments.jsonl
+      SPREAD_MODEL_PATH: /app/models-vol/best_spread_model.json
+      SPREAD_EXPERIMENTS_PATH: /app/models-vol/spread_experiments.jsonl
       RELOAD_TOKEN: ${RELOAD_TOKEN:-devtoken}
     volumes:
       - models:/app/models-vol:ro
@@ -41,6 +43,8 @@ services:
       DATABASE_URL: postgresql+psycopg://nfl:${POSTGRES_PASSWORD:-nfldev}@postgres:5432/nflpredictor
       MODEL_PATH: /app/models-vol/best_model.json
       EXPERIMENTS_PATH: /app/models-vol/experiments.jsonl
+      SPREAD_MODEL_PATH: /app/models-vol/best_spread_model.json
+      SPREAD_EXPERIMENTS_PATH: /app/models-vol/spread_experiments.jsonl
       REFRESH_CRON_HOUR: ${REFRESH_CRON_HOUR:-6}
     volumes:
       - models:/app/models-vol
