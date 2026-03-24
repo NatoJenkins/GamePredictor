@@ -16,13 +16,13 @@ Requirements for Design & Landing Page milestone. Each maps to roadmap phases.
 
 ### Landing Page
 
-- [ ] **LAND-01**: Home page at `/` displays hero section with "NFL Nostradamus" in Syne display font, subtitle tagline ("20 seasons of play-by-play data. 17 engineered features. One question: who wins Sunday?"), and validation accuracy stat (62.9%) with amber accent on the number
-- [ ] **LAND-02**: Home page displays "How It Works" section with 4 scannable blocks: Data (20 seasons, ~1.2M plays), Features (17 game-level features, temporal boundaries), Models (XGBoost 63.7% + Ridge ~10pt MAE), Pipeline (automated weekly refresh + human approval gate)
-- [ ] **LAND-03**: Home page displays explore section with primary CTA "Explore Prediction History" (amber accent button) and secondary links to Accuracy and Experiments pages
-- [ ] **LAND-04**: Home page displays footer area with "Built by Silver Reyes" linking to silverreyes.net and a GitHub link
-- [ ] **LAND-05**: Home page includes placeholder image containers (amber accent border) for hero graphic and optional feature block visuals
-- [ ] **LAND-06**: Home page uses a standalone full-width layout (no sidebar), distinct from the dashboard AppLayout
-- [ ] **LAND-07**: Home page is responsive — hero headline + stat visible without scrolling on mobile
+- [x] **LAND-01**: Home page at `/` displays hero section with "NFL Nostradamus" in Syne display font, subtitle tagline ("20 seasons of play-by-play data. 17 engineered features. One question: who wins Sunday?"), and validation accuracy stat (62.9%) with amber accent on the number
+- [x] **LAND-02**: Home page displays "How It Works" section with 4 scannable blocks: Data (20 seasons, ~1.2M plays), Features (17 game-level features, temporal boundaries), Models (XGBoost 63.7% + Ridge ~10pt MAE), Pipeline (automated weekly refresh + human approval gate)
+- [x] **LAND-03**: Home page displays explore section with primary CTA "Explore Prediction History" (amber accent button) and secondary links to Accuracy and Experiments pages
+- [x] **LAND-04**: Home page displays footer area with "Built by Silver Reyes" linking to silverreyes.net and a GitHub link
+- [x] **LAND-05**: Home page includes placeholder image containers (amber accent border) for hero graphic and optional feature block visuals
+- [x] **LAND-06**: Home page uses a standalone full-width layout (no sidebar), distinct from the dashboard AppLayout
+- [x] **LAND-07**: Home page is responsive — hero headline + stat visible without scrolling on mobile
 
 ### Navigation
 
@@ -73,13 +73,13 @@ Deferred to future release. Tracked but not in current roadmap.
 | NAV-01 | Phase 12 | Complete |
 | NAV-02 | Phase 12 | Complete |
 | NAV-03 | Phase 12 | Complete |
-| LAND-01 | Phase 13 | Pending |
-| LAND-02 | Phase 13 | Pending |
-| LAND-03 | Phase 13 | Pending |
-| LAND-04 | Phase 13 | Pending |
-| LAND-05 | Phase 13 | Pending |
-| LAND-06 | Phase 13 | Pending |
-| LAND-07 | Phase 13 | Pending |
+| LAND-01 | Phase 13 | Complete |
+| LAND-02 | Phase 13 | Complete |
+| LAND-03 | Phase 13 | Complete |
+| LAND-04 | Phase 13 | Complete |
+| LAND-05 | Phase 13 | Complete |
+| LAND-06 | Phase 13 | Complete |
+| LAND-07 | Phase 13 | Complete |
 | EXPR-01 | Phase 14 | Pending |
 | EXPR-02 | Phase 14 | Pending |
 | EXPR-03 | Phase 14 | Pending |

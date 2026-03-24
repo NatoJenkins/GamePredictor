@@ -245,7 +245,7 @@ This is the safer pattern since `@base-ui/react` Button may not support `asChild
 const blocks = [
   { icon: Database, stat: "20 seasons, ~1.2M plays", label: "Data" },
   { icon: Layers, stat: "17 game-level features", label: "Features" },
-  { icon: Brain, stat: "XGBoost 63.7% + Ridge ~10pt MAE", label: "Models" },
+  { icon: Brain, stat: "Pick-em 63.7% + spreads ~10pt MAE", label: "Models" },
   { icon: RefreshCw, stat: "Automated weekly refresh", label: "Pipeline" },
 ];
 

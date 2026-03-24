@@ -27,7 +27,7 @@ Build the landing page content at `/`. Hero section, How It Works explainer, exp
 - Numbers + one-liner per block: bold stat with a single sentence explanation
   - Data: "20 seasons, ~1.2M plays"
   - Features: "17 game-level features, temporal boundaries"
-  - Models: "XGBoost 63.7% + Ridge ~10pt MAE"
+  - Models: "Pick-em 63.7% + spreads ~10pt MAE"
   - Pipeline: "Automated weekly refresh + human approval gate"
 - Borderless cards with subtle background (no Card component border) -- lighter visual weight than dashboard cards
 

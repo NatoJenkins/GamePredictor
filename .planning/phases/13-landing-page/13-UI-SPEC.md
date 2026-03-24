@@ -187,7 +187,7 @@ Source: CONTEXT.md page structure decisions.
 | HIT block 2 label | Features | `text-sm font-bold uppercase tracking-wide text-muted-foreground` |
 | HIT block 2 stat | 17 game-level features, temporal boundaries | `text-base text-foreground` |
 | HIT block 3 label | Models | `text-sm font-bold uppercase tracking-wide text-muted-foreground` |
-| HIT block 3 stat | XGBoost 63.7% + Ridge ~10pt MAE | `text-base text-foreground` |
+| HIT block 3 stat | Pick-em 63.7% + spreads ~10pt MAE | `text-base text-foreground` |
 | HIT block 4 label | Pipeline | `text-sm font-bold uppercase tracking-wide text-muted-foreground` |
 | HIT block 4 stat | Automated weekly refresh + human approval gate | `text-base text-foreground` |
 | Primary CTA | Explore Prediction History | `buttonVariants({ size: "lg" })` with `px-8 text-base` override |
