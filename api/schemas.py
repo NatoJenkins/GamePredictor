@@ -48,6 +48,7 @@ class PredictionHistoryResponse(BaseModel):
 
     predictions: list[PredictionResponse]
     summary: HistorySummary
+    available_seasons: list[int] = []
 
 
 class WeekPredictionsResponse(BaseModel):

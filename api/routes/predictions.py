@@ -126,18 +126,22 @@ async def get_prediction_history(
     """
     engine = state["engine"]
 
+    # Get all available seasons for the dropdown
+    seasons_df = pd.read_sql(
+        "SELECT DISTINCT season FROM predictions ORDER BY season DESC",
+        engine,
+    )
+    available_seasons = [int(s) for s in seasons_df["season"]]
+
     # Default season = most recent season with predictions
     if season is None:
-        result = pd.read_sql(
-            "SELECT MAX(season) as max_season FROM predictions",
-            engine,
-        )
-        if result["max_season"].iloc[0] is None:
+        if not available_seasons:
             return PredictionHistoryResponse(
                 predictions=[],
                 summary=HistorySummary(correct=0, total=0, accuracy=None),
+                available_seasons=[],
             )
-        season = int(result["max_season"].iloc[0])
+        season = available_seasons[0]
 
     # Build query with optional team filter
     query = """
@@ -186,4 +190,5 @@ async def get_prediction_history(
         summary=HistorySummary(
             correct=correct_count, total=total, accuracy=accuracy
         ),
+        available_seasons=available_seasons,
     )

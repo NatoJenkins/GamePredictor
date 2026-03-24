@@ -21,6 +21,7 @@ export interface HistorySummary {
 export interface PredictionHistoryResponse {
   predictions: PredictionResponse[];
   summary: HistorySummary;
+  available_seasons: number[];
 }
 
 export interface WeekPredictionsResponse {

@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router";
 import { usePredictionHistory } from "@/hooks/usePredictionHistory";
 import { useSpreadHistory } from "@/hooks/useSpreadHistory";
 import { HistoryFilters } from "@/components/history/HistoryFilters";
+import { HistoryLegend } from "@/components/history/HistoryLegend";
 import { HistoryTable } from "@/components/history/HistoryTable";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { ApiError } from "@/lib/api";
@@ -39,9 +40,7 @@ export function HistoryPage() {
 
   const availableSeasons = useMemo(() => {
     if (!data) return [];
-    return [
-      ...new Set(data.predictions.map((p) => p.season)),
-    ].sort((a, b) => b - a);
+    return data.available_seasons;
   }, [data]);
 
   const availableTeams = useMemo(() => {
@@ -139,6 +138,8 @@ export function HistoryPage() {
         availableSeasons={availableSeasons}
         availableTeams={availableTeams}
       />
+
+      <HistoryLegend />
 
       <HistoryTable predictions={data.predictions} spreadByGameId={spreadByGameId} />
     </div>
