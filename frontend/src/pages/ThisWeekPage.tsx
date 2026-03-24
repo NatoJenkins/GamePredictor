@@ -66,7 +66,7 @@ export function ThisWeekPage() {
         <div className="mt-4 text-center">
           <Link
             to="/history"
-            className="text-sm text-blue-400 hover:underline"
+            className="text-sm text-accent-foreground hover:underline"
           >
             View Prediction History
           </Link>

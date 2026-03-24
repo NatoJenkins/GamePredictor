@@ -9,9 +9,9 @@ function formatSpread(value: number): string {
 }
 
 function getSpreadErrorColor(error: number): string {
-  if (error <= 3) return "text-green-400";
-  if (error <= 7) return "text-amber-400";
-  return "text-red-400";
+  if (error <= 3) return "text-status-success";
+  if (error <= 7) return "text-status-warning";
+  return "text-status-error";
 }
 
 export function SpreadLabel({ predictedSpread, actualSpread }: SpreadLabelProps) {

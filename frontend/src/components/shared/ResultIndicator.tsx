@@ -6,16 +6,16 @@ interface ResultIndicatorProps {
 
 export function ResultIndicator({ correct }: ResultIndicatorProps) {
   if (correct === true) {
-    return <CircleCheck className="h-5 w-5 text-green-500" />;
+    return <CircleCheck className="h-5 w-5 text-status-success" />;
   }
 
   if (correct === false) {
-    return <CircleX className="h-5 w-5 text-red-500" />;
+    return <CircleX className="h-5 w-5 text-status-error" />;
   }
 
   return (
     <span className="flex items-center gap-1">
-      <Minus className="h-5 w-5 text-zinc-500" />
+      <Minus className="h-5 w-5 text-muted-foreground" />
       <span className="text-xs text-muted-foreground">Pending</span>
     </span>
   );

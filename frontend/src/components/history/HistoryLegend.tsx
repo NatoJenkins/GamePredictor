@@ -14,7 +14,7 @@ export function HistoryLegend() {
       </button>
 
       {open && (
-        <div className="mt-3 p-4 rounded-lg border border-zinc-800 bg-zinc-900/50 text-sm text-muted-foreground space-y-3">
+        <div className="mt-3 p-4 rounded-lg border border-border bg-background/50 text-sm text-muted-foreground space-y-3">
           <div>
             <span className="font-semibold text-foreground">Pick</span> —
             The model's predicted winner for the game.
@@ -22,8 +22,8 @@ export function HistoryLegend() {
           <div>
             <span className="font-semibold text-foreground">Confidence</span> —
             How confident the model is in its pick.{" "}
-            <span className="text-amber-400">Medium</span> and{" "}
-            <span className="text-green-400">High</span> indicate stronger conviction.
+            <span className="text-status-warning">Medium</span> and{" "}
+            <span className="text-status-success">High</span> indicate stronger conviction.
           </div>
           <div>
             <span className="font-semibold text-foreground">Spread</span> —
@@ -40,23 +40,23 @@ export function HistoryLegend() {
               The color shows how accurate the spread prediction was:
             </div>
             <div>
-              <span className="text-green-400 font-semibold">Green</span> — Within
+              <span className="text-status-success font-semibold">Green</span> — Within
               3 points of the actual margin (field goal or less).
             </div>
             <div>
-              <span className="text-amber-400 font-semibold">Amber</span> — Off by
+              <span className="text-status-warning font-semibold">Amber</span> — Off by
               3 to 7 points.
             </div>
             <div>
-              <span className="text-red-400 font-semibold">Red</span> — Off by more
+              <span className="text-status-error font-semibold">Red</span> — Off by more
               than 7 points (touchdown+).
             </div>
           </div>
           <div>
             <span className="font-semibold text-foreground">Result</span> —
             Whether the model's <em>winner pick</em> was correct (
-            <span className="text-green-400">&#10004;</span>) or wrong (
-            <span className="text-red-400">&#10008;</span>).
+            <span className="text-status-success">&#10004;</span>) or wrong (
+            <span className="text-status-error">&#10008;</span>).
           </div>
           <div>
             <span className="font-semibold text-foreground">Actual</span> — The

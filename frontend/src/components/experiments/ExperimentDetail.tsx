@@ -55,9 +55,9 @@ export function ExperimentDetail({ experiment }: ExperimentDetailProps) {
             {experiment.shap_top5.map((item) => (
               <div key={item.feature} className="flex items-center gap-2">
                 <span className="text-xs w-40 truncate">{item.feature}</span>
-                <div className="flex-1 h-4 bg-zinc-800 rounded overflow-hidden">
+                <div className="flex-1 h-4 bg-secondary rounded overflow-hidden">
                   <div
-                    className="h-4 bg-blue-500 rounded"
+                    className="h-4 bg-primary rounded"
                     style={{
                       width: `${(item.importance / maxImportance) * 100}%`,
                     }}

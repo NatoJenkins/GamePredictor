@@ -88,7 +88,7 @@ export function ExperimentTable({ experiments }: ExperimentTableProps) {
           >
             <CollapsibleTrigger
               render={
-                <TableRow className="hover:bg-zinc-800/50 cursor-pointer transition-colors" />
+                <TableRow className="hover:bg-secondary/50 cursor-pointer transition-colors" />
               }
             >
               <TableCell className="font-mono text-xs">
@@ -113,18 +113,18 @@ export function ExperimentTable({ experiments }: ExperimentTableProps) {
               <TableCell>{exp.log_loss.toFixed(4)}</TableCell>
               <TableCell>
                 {exp.keep ? (
-                  <Badge className="bg-green-500/20 text-green-400 border-0">
+                  <Badge className="bg-status-success/15 text-status-success border-0">
                     Kept
                   </Badge>
                 ) : (
-                  <Badge className="bg-red-500/20 text-red-400 border-0">
+                  <Badge className="bg-status-error/15 text-status-error border-0">
                     Reverted
                   </Badge>
                 )}
               </TableCell>
             </CollapsibleTrigger>
             <CollapsibleContent
-              render={<TableRow className="bg-zinc-900/50" />}
+              render={<TableRow className="bg-background/50" />}
             >
               <TableCell colSpan={7} className="p-0">
                 <ExperimentDetail experiment={exp} />

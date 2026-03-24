@@ -224,7 +224,7 @@ export function AccuracyPage() {
               {weekBreakdown.map((week) => (
                 <TableRow
                   key={week.week}
-                  className="hover:bg-zinc-800/50"
+                  className="hover:bg-secondary/50"
                 >
                   <TableCell>{week.week}</TableCell>
                   <TableCell>

@@ -20,14 +20,14 @@ function ComparisonBadge({
 
   if (diff > 0) {
     return (
-      <Badge className="bg-green-500/20 text-green-400 border-0">
+      <Badge className="bg-status-success/15 text-status-success border-0">
         Beating +{(diff * 100).toFixed(1)}%
       </Badge>
     );
   }
 
   return (
-    <Badge className="bg-red-500/20 text-red-400 border-0">
+    <Badge className="bg-status-error/15 text-status-error border-0">
       Behind {(diff * 100).toFixed(1)}%
     </Badge>
   );

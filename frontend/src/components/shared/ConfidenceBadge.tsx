@@ -2,9 +2,9 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 const tierStyles: Record<string, string> = {
-  high: "bg-blue-500/20 text-blue-400",
-  medium: "bg-amber-500/20 text-amber-400",
-  low: "bg-zinc-500/20 text-zinc-400",
+  high: "bg-tier-high-bg text-tier-high",
+  medium: "bg-tier-medium-bg text-tier-medium",
+  low: "bg-tier-low-bg text-tier-low",
 };
 
 interface ConfidenceBadgeProps {

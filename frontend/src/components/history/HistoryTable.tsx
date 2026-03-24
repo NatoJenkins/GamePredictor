@@ -21,9 +21,9 @@ function formatSpread(value: number): string {
 }
 
 function getSpreadErrorColor(error: number): string {
-  if (error <= 3) return "text-green-400";
-  if (error <= 7) return "text-amber-400";
-  return "text-red-400";
+  if (error <= 3) return "text-status-success";
+  if (error <= 7) return "text-status-warning";
+  return "text-status-error";
 }
 
 function SpreadCell({ spread }: { spread: SpreadPredictionResponse }) {
@@ -76,7 +76,7 @@ export function HistoryTable({ predictions, spreadByGameId }: HistoryTableProps)
         </TableHeader>
         <TableBody>
           {predictions.map((p) => (
-            <TableRow key={p.game_id} className="hover:bg-zinc-800/50">
+            <TableRow key={p.game_id} className="hover:bg-secondary/50">
               <TableCell>{p.week}</TableCell>
               <TableCell>{formatDate(p.game_date)}</TableCell>
               <TableCell className="text-sm">

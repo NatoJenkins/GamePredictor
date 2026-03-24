@@ -20,9 +20,9 @@ function ModelStatusBar() {
 
   return (
     <div>
-      <Separator className="bg-zinc-800" />
+      <Separator className="bg-border" />
       <div className="p-4">
-        <Card className="border-zinc-800 bg-zinc-900/50">
+        <Card className="border-border bg-background/50">
           <CardContent className="p-3">
             {isLoading ? (
               <div className="space-y-2">
@@ -50,7 +50,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop / Tablet sidebar */}
-      <aside className="fixed left-0 top-0 hidden h-screen flex-col justify-between border-r border-zinc-800 bg-zinc-900 md:flex md:w-[180px] lg:w-60">
+      <aside className="fixed left-0 top-0 hidden h-screen flex-col justify-between border-r border-border bg-card md:flex md:w-[180px] lg:w-60">
         <div>
           <div className="p-6">
             <span className="text-sm font-normal text-foreground">
@@ -67,8 +67,8 @@ export function Sidebar() {
                   cn(
                     "flex items-center gap-2 rounded-md px-3 py-2 text-xs transition-colors duration-150",
                     isActive
-                      ? "bg-blue-500/10 text-blue-400"
-                      : "text-muted-foreground hover:bg-zinc-800",
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-secondary",
                   )
                 }
               >
@@ -82,7 +82,7 @@ export function Sidebar() {
       </aside>
 
       {/* Mobile top nav */}
-      <nav className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center gap-4 border-b border-zinc-800 bg-zinc-900 px-4 md:hidden">
+      <nav className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center gap-4 border-b border-border bg-card px-4 md:hidden">
         <span className="mr-2 text-sm font-normal text-foreground">
           NFL Predictor
         </span>
@@ -95,8 +95,8 @@ export function Sidebar() {
               cn(
                 "flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors duration-150",
                 isActive
-                  ? "bg-blue-500/10 text-blue-400"
-                  : "text-muted-foreground hover:bg-zinc-800",
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-secondary",
               )
             }
           >

@@ -5,9 +5,9 @@ import { SpreadLabel } from "@/components/picks/SpreadLabel";
 import type { PredictionResponse, SpreadPredictionResponse } from "@/lib/types";
 
 const tierBorderColors: Record<string, string> = {
-  high: "border-blue-500",
-  medium: "border-amber-500",
-  low: "border-zinc-500",
+  high: "border-tier-high",
+  medium: "border-tier-medium",
+  low: "border-tier-low",
 };
 
 interface PickCardProps {

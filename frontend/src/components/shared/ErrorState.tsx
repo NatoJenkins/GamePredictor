@@ -18,7 +18,7 @@ export function ErrorState({
   return (
     <Card className="mx-auto max-w-md">
       <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-        <AlertCircle className="h-8 w-8 text-red-500" />
+        <AlertCircle className="h-8 w-8 text-destructive" />
         <h2 className="text-xl font-semibold">{heading}</h2>
         <p className="text-sm text-muted-foreground">{body}</p>
         {onRetry && (
