@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router";
 import { usePredictionHistory } from "@/hooks/usePredictionHistory";
 import { useModelInfo } from "@/hooks/useModelInfo";
 import { useSpreadHistory } from "@/hooks/useSpreadHistory";
@@ -10,6 +11,13 @@ import {
 import { ErrorState } from "@/components/shared/ErrorState";
 import { ApiError } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -27,14 +35,41 @@ interface WeekBreakdown {
 }
 
 export function AccuracyPage() {
-  const historyQuery = usePredictionHistory();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const season = searchParams.get("season")
+    ? Number(searchParams.get("season"))
+    : undefined;
+
+  const historyQuery = usePredictionHistory(season);
   const modelQuery = useModelInfo();
   const hasSpreadModel = modelQuery.data?.spread_model != null;
-  const spreadHistoryQuery = useSpreadHistory(undefined, hasSpreadModel);
+  const spreadHistoryQuery = useSpreadHistory(season, hasSpreadModel);
 
   useEffect(() => {
     document.title = "Season Accuracy - NFL Predictor";
   }, []);
+
+  const availableSeasons = useMemo(() => {
+    if (!historyQuery.data) return [];
+    return historyQuery.data.available_seasons;
+  }, [historyQuery.data]);
+
+  const displaySeason = useMemo(() => {
+    if (season) return season;
+    if (availableSeasons.length > 0) return availableSeasons[0];
+    return null;
+  }, [season, availableSeasons]);
+
+  const handleSeasonChange = (value: string | null) => {
+    const params = new URLSearchParams(searchParams);
+    if (!value || value === "latest") {
+      params.delete("season");
+    } else {
+      params.set("season", value);
+    }
+    setSearchParams(params);
+  };
 
   const weekBreakdown = useMemo<WeekBreakdown[]>(() => {
     if (!historyQuery.data) return [];
@@ -122,7 +157,29 @@ export function AccuracyPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-8">Season Accuracy</h1>
+      <div className="flex items-center gap-4 mb-8">
+        <h1 className="text-xl font-semibold">
+          {displaySeason} Season Accuracy
+        </h1>
+        {availableSeasons.length > 1 && (
+          <Select
+            value={season !== undefined ? String(season) : "latest"}
+            onValueChange={handleSeasonChange}
+          >
+            <SelectTrigger className="w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="latest">Latest</SelectItem>
+              {availableSeasons.map((s) => (
+                <SelectItem key={s} value={String(s)}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
 
       <SummaryCards
         summary={historyQuery.data.summary}

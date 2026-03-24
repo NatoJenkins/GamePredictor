@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { InfoTooltip } from "@/components/shared/InfoTooltip";
 import type { HistorySummary } from "@/lib/types";
 
 interface SummaryCardsProps {
@@ -44,6 +45,7 @@ export function SummaryCards({
         <CardContent className="p-4">
           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
             Model
+            <InfoTooltip text="The model's win/loss prediction record for this season. It picks a winner for every game based on team stats, rest days, and recent performance." />
           </p>
           <p className="text-[28px] font-semibold leading-tight">
             {summary.correct}/{summary.total}
@@ -61,6 +63,7 @@ export function SummaryCards({
         <CardContent className="p-4">
           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
             vs Always-Home
+            <InfoTooltip text="Baseline that always picks the home team to win. Home-field advantage is real, so this is the simplest strategy to beat. The badge shows how much the model beats or trails this baseline." />
           </p>
           <p className="text-[28px] font-semibold leading-tight">
             {(baselineAlwaysHome * 100).toFixed(1)}%
@@ -79,6 +82,7 @@ export function SummaryCards({
         <CardContent className="p-4">
           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
             vs Better-Record
+            <InfoTooltip text="Baseline that always picks the team with the better record. This is a tougher benchmark — it uses the wisdom of the season so far. The badge shows how the model compares." />
           </p>
           <p className="text-[28px] font-semibold leading-tight">
             {(baselineBetterRecord * 100).toFixed(1)}%

@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { InfoTooltip } from "@/components/shared/InfoTooltip";
 import type {
   SpreadModelInfo,
   PredictionResponse,
@@ -84,12 +85,13 @@ export function SpreadSummaryCards({
         <CardContent className="p-4">
           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
             Spread MAE
+            <InfoTooltip text="Mean Absolute Error — the average number of points the spread prediction was off by. Lower is better. For context, an NFL field goal is 3 points." />
           </p>
           <p className="text-[28px] font-semibold leading-tight">
             {spreadModel.mae.toFixed(2)}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            points average error
+            avg. points off per game
           </p>
         </CardContent>
       </Card>
@@ -99,6 +101,7 @@ export function SpreadSummaryCards({
         <CardContent className="p-4">
           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
             Spread Winner Accuracy
+            <InfoTooltip text="How often the spread model correctly predicted which team would win, based on the predicted point margin. The badge compares this to the classifier model above." />
           </p>
           <p className="text-[28px] font-semibold leading-tight">
             {(spreadModel.derived_win_accuracy * 100).toFixed(1)}%
@@ -117,6 +120,7 @@ export function SpreadSummaryCards({
         <CardContent className="p-4">
           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
             Classifier vs Spread
+            <InfoTooltip text="Head-to-head comparison of the two models on the same games. 'Both correct' means both picked the winner right. 'Only classifier' means the pick-em model was right but the spread model was wrong, and vice versa." />
           </p>
           <div className="flex flex-col gap-1 mt-1">
             <p className="text-sm">
