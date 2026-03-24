@@ -27,7 +27,7 @@ export function LandingPage() {
   return (
     <div className="mx-auto max-w-4xl px-6">
       {/* -- Section 1: Hero -- */}
-      <section className="relative flex min-h-[50vh] md:min-h-[65vh] flex-col items-center justify-center py-16 text-center">
+      <section className="relative flex min-h-[50vh] md:min-h-[50vh] flex-col items-center justify-center py-16 text-center">
         {/* Gradient overlay */}
         <div className="pointer-events-none absolute inset-0 bg-radial-[at_50%_65%] from-primary/8 to-transparent" />
 
