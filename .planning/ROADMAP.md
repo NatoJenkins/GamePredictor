@@ -57,8 +57,8 @@ Full details archived to `milestones/v1.1-ROADMAP.md`
 **Plans**: 2 plans
 
 Plans:
-- [ ] 11-01-PLAN.md — Theme foundation: silverreyes.net palette, @fontsource fonts, tier/status tokens
-- [ ] 11-02-PLAN.md — Component migration: replace all hardcoded Tailwind color classes with semantic tokens
+- [x] 11-01-PLAN.md — Theme foundation: silverreyes.net palette, @fontsource fonts, tier/status tokens
+- [x] 11-02-PLAN.md — Component migration: replace all hardcoded Tailwind color classes with semantic tokens
 
 ### Phase 12: Route Restructure and Navigation
 **Goal**: The application routes are reorganized so `/` serves the landing page in a standalone layout while all dashboard pages live under their own routes with the sidebar, and navigation reflects the new structure
@@ -69,10 +69,10 @@ Plans:
   2. Navigating to `/this-week` renders the existing This Week page inside the dashboard layout with sidebar
   3. Sidebar displays a Home tab that links to `/`, and all other nav items point to their correct routes with proper active-state highlighting
   4. All previously bookmarkable dashboard routes (`/accuracy`, `/experiments`, `/history`) continue to work without changes
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 12-01: TBD
+- [ ] 12-01-PLAN.md — Route restructure: two layout branches (LandingLayout + AppLayout), Home nav item, sidebar branding update
 
 ### Phase 13: Landing Page
 **Goal**: Visitors arriving at `/` see a polished, informative landing page that communicates what Nostradamus does, how it works, and invites them to explore the dashboard
@@ -123,7 +123,7 @@ Note: Phases 13 and 14 are independent and could execute in either order once 11
 | 8. Database and API Integration | v1.1 | 2/2 | Complete | 2026-03-23 |
 | 9. Dashboard Integration | v1.1 | 3/3 | Complete | 2026-03-23 |
 | 10. Pipeline and Production Deployment | v1.1 | 2/2 | Complete | 2026-03-24 |
-| 11. Design System Foundation | 2/2 | Complete    | 2026-03-24 | - |
-| 12. Route Restructure and Navigation | v1.2 | 0/0 | Not started | - |
+| 11. Design System Foundation | v1.2 | 2/2 | Complete | 2026-03-24 |
+| 12. Route Restructure and Navigation | v1.2 | 0/1 | Not started | - |
 | 13. Landing Page | v1.2 | 0/0 | Not started | - |
 | 14. Experiments Redesign | v1.2 | 0/0 | Not started | - |
