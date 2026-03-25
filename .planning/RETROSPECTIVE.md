@@ -48,6 +48,76 @@
 
 ---
 
+## Milestone: v1.1 -- Point Spread Model
+
+**Shipped:** 2026-03-24
+**Phases:** 4 | **Plans:** 10 | **Execution time:** ~2 days
+
+### What Was Built
+- Ridge regression spread model (MAE 10.68, 60.2% derived winner accuracy)
+- Spread predictions integrated across API, dashboard PickCards, accuracy page, and history
+- Weekly pipeline step 5 for automated spread inference
+- Season selector, info tooltips, spread summary cards on accuracy page
+
+### What Worked
+- Reusing the existing experiment loop pattern from v1.0 made spread model training straightforward
+- Integrated dashboard approach (spreads on existing PickCards) avoided a separate page and kept the UI unified
+- Non-fatal pipeline step design meant spread failures don't block Pick-Em predictions
+
+### What Was Inefficient
+- Sportsbook sign convention was corrected mid-milestone after initial implementation used the wrong direction
+- Multiple small fix commits for sign display suggest the spec should have included explicit examples
+
+### Patterns Established
+- Sportsbook sign convention: negative = favorite, positive = underdog
+- "Pick-Em" branding (hyphenated) as canonical term
+- Non-fatal pipeline steps for secondary models
+
+### Key Lessons
+1. Define display conventions (sign direction, formatting) explicitly in requirements before implementation
+2. Ridge regression can be competitive with XGBoost for regression tasks on small datasets
+3. Integrating into existing UI components is faster than building new pages
+
+---
+
+## Milestone: v1.2 -- Design & Landing Page
+
+**Shipped:** 2026-03-25
+**Phases:** 4 | **Plans:** 5 | **Execution time:** ~1 day
+
+### What Was Built
+- silverreyes.net design system: amber palette, Syne + IBM Plex Mono self-hosted fonts, semantic color tokens
+- Replaced 36 hardcoded Tailwind color classes across 14 components with theme tokens
+- Two-branch route structure: LandingLayout (full-width) and AppLayout (sidebar)
+- Landing page with hero, how-it-works, explore CTAs, and footer
+- Fixed experiment table column alignment and full hypothesis display
+
+### What Worked
+- Two-plan split for Phase 11 (foundation + migration) kept each plan focused and reviewable
+- Self-hosted fonts via @fontsource eliminated FOUT and external CDN dependency
+- Removing Collapsible component entirely (instead of patching) was the right call -- the underlying HTML invalidity couldn't be fixed with wrapper hacks
+
+### What Was Inefficient
+- DSGN-01 through DSGN-04 requirements were completed but never marked in the traceability table -- bookkeeping gap
+- Phase 14 research step was skipped (has_research: false) -- the root cause analysis was done during discuss-phase instead, which worked fine but broke the expected artifact chain
+
+### Patterns Established
+- Semantic token strategy: tier-high/medium/low for confidence, status-success/error/warning for outcomes
+- Two-layout route branching for marketing vs app pages
+- Plain state-driven expand/collapse instead of third-party collapsible components for HTML tables
+
+### Key Lessons
+1. Update requirement traceability as part of plan completion, not at milestone close -- stale checkboxes create false alarms during readiness checks
+2. When a third-party component renders invalid HTML (div inside tbody), remove it entirely rather than trying to work around it
+3. Design system migration is most efficient as foundation + sweep -- first lay tokens, then grep-replace all hardcoded classes
+
+### Cost Observations
+- Model mix: quality profile (opus orchestration, sonnet verification)
+- 4 phases completed in a single day
+- Notable: smallest milestone yet (5 plans) but highest visual impact
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -55,15 +125,22 @@
 | Milestone | Execution Time | Phases | Key Change |
 |-----------|---------------|--------|------------|
 | v1.0 | 1.37 hours | 6 | Initial project -- established all patterns |
+| v1.1 | ~2 days | 4 | Added second model type (regression) |
+| v1.2 | ~1 day | 4 | Design system + landing page -- UI-focused milestone |
 
 ### Cumulative Quality
 
 | Milestone | Tests | Verification Score | Tech Debt Items |
 |-----------|-------|--------------------|-----------------|
 | v1.0 | 102+ passing | 28/28 requirements | 3 (all minor) |
+| v1.1 | 110+ passing | 13/13 requirements | 2 (Postgres test, stale predictions) |
+| v1.2 | N/A (UI-only) | 12/14 shipped + 2 deferred | 0 |
 
 ### Top Lessons (Verified Across Milestones)
 
 1. Verify DDL-to-code alignment during planning, not after execution
 2. Start with the full feature set and prune -- ablation is cheaper than incremental feature addition
 3. Regularization (learning rate, early stopping) before feature engineering for accuracy gains
+4. Define display conventions explicitly in specs before implementation (v1.1 sign convention fix)
+5. Update requirement traceability during plan execution, not at milestone close (v1.2 stale checkboxes)
+6. When third-party components generate invalid HTML, remove entirely rather than patch (v1.2 Collapsible removal)
