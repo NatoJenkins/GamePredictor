@@ -41,7 +41,7 @@ Full details archived to `milestones/v1.1-ROADMAP.md`
 - [x] **Phase 11: Design System Foundation** - Migrate dashboard to silverreyes.net warm amber palette, typography, and semantic tokens (completed 2026-03-24)
 - [x] **Phase 12: Route Restructure and Navigation** - Move This Week to `/this-week`, add Home nav item, landing page route at `/` (completed 2026-03-24)
 - [x] **Phase 13: Landing Page** - Hero section, how-it-works explainer, explore CTAs, and footer at `/` (completed 2026-03-24)
-- [ ] **Phase 14: Experiments Redesign** - Full descriptions, proper column alignment, hybrid summary+detail layout
+- [ ] **Phase 14: Experiments Redesign** - Fix column alignment and remove hypothesis truncation (EXPR-03/EXPR-04 deferred to v1.3)
 
 ## Phase Details
 
@@ -90,19 +90,18 @@ Plans:
 - [x] 13-01-PLAN.md — Full landing page content: hero, how-it-works, banner image, CTAs, footer, and visual verification
 
 ### Phase 14: Experiments Redesign
-**Goal**: The experiments page presents each experiment with full context and proper visual hierarchy, making it easy to scan, compare, and understand what was tested and why
+**Goal**: The experiments table has properly aligned columns and displays full hypothesis text without truncation, preserving existing expand/collapse and sorting functionality
 **Depends on**: Phase 11
 **Requirements**: EXPR-01, EXPR-02, EXPR-03, EXPR-04
+**Note**: Scope narrowed per user decision. Only EXPR-01 (column alignment) and EXPR-02 (remove truncation) are implemented. EXPR-03 (hybrid layout) and EXPR-04 (kept visual distinction) are deferred to v1.3 backlog.
 **Success Criteria** (what must be TRUE):
   1. Experiment table columns are properly aligned -- headers sit directly above their corresponding data columns with no visual drift
-  2. Each experiment displays its full title and a layman-friendly explanation of what was tested, without truncation, while preserving technical detail (parameters, features, SHAP) in an expandable detail panel
-  3. Experiments use a hybrid layout: sortable summary rows for quick comparison with an expandable detail panel per experiment for deep-dive information
-  4. The kept (production) experiment is visually distinguishable from reverted experiments through accent border or background treatment, not just a text badge
-**Plans**: TBD
+  2. Each experiment displays its full hypothesis text without truncation, with natural text wrapping
+  3. Expand/collapse detail panel and column sorting functionality are preserved
+**Plans**: 1 plan
 
 Plans:
-- [ ] 14-01: TBD
-- [ ] 14-02: TBD
+- [ ] 14-01-PLAN.md — Fix column alignment (remove Collapsible div wrappers) and remove hypothesis truncation
 
 ## Progress
 
@@ -124,5 +123,5 @@ Note: Phases 13 and 14 are independent and could execute in either order once 11
 | 10. Pipeline and Production Deployment | v1.1 | 2/2 | Complete | 2026-03-24 |
 | 11. Design System Foundation | v1.2 | 2/2 | Complete | 2026-03-24 |
 | 12. Route Restructure and Navigation | v1.2 | 1/1 | Complete | 2026-03-24 |
-| 13. Landing Page | v1.2 | Complete    | 2026-03-24 | 2026-03-24 |
-| 14. Experiments Redesign | v1.2 | 0/0 | Not started | - |
+| 13. Landing Page | v1.2 | 1/1 | Complete | 2026-03-24 |
+| 14. Experiments Redesign | v1.2 | 0/1 | Not started | - |
